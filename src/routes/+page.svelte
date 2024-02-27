@@ -20,8 +20,7 @@
 	}
 
 	function clearCanvas() {
-		// ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-		ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+		ctx.fillStyle = 'white';
 		ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 		drawGridSquare(0, 0, 'red');
 		drawGrid();
