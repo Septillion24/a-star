@@ -1,11 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { GridNode } from '../GridNode';
 
 	let canvas: HTMLCanvasElement;
 	let canvasHeight: number = 700;
 	let canvasWidth: number = 700;
-	let gridHeight: number = 20;
-	let gridWidth: number = 20;
+	let gridHeight: number = 15;
+	let gridWidth: number = 15;
+	let unWalkableChance = 0.1;
+	let gridContent: GridNode[][] = new Array(gridHeight)
+		.fill(null)
+		.map(() => new Array(gridWidth).fill(null)); // 2d array filled with null
 
 	let ctx: CanvasRenderingContext2D;
 
@@ -16,16 +21,38 @@
 		if (ctx === undefined) {
 			throw new Error('Could not get context of canvas');
 		}
-		clearCanvas();
+		generateNodes();  
+        refreshCanvas();
 	}
 
+    function debugDisplayTable(){
+        const tableContent = gridContent.map((row) =>
+        row.reduce((acc, node, index) => {
+            (acc as { [key: string]: string })[`Col ${index}`] = node.isWalkable ? 'NO' : 'y'; // all this to make it easy to read in the grid
+            return acc;
+        }, {})
+		);
+		console.table(tableContent);
+    }
+
+    function refreshCanvas() {
+        clearCanvas();
+        displayGridNodes();
+        drawGridLines();
+        
+    }
+	function generateNodes() {
+		for (let x = 0; x < gridWidth; x++) {
+			for (let y = 0; y < gridHeight; y++) {
+				const isWalkable: boolean = Math.random() <= unWalkableChance ? true : false;
+				gridContent[x][y] = new GridNode(x, y, {isWalkable});
+			}
+		}
+	}
 	function clearCanvas() {
 		ctx.fillStyle = 'white';
 		ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-		drawGridSquare(0, 0, 'red');
-		drawGrid();
 	}
-
 	function drawGridSquare(x: number, y: number, color: string = 'black') {
 		if (x > gridWidth - 1) {
 			throw new Error(`Index out of range. ${x} is greater than max index ${gridWidth - 1}`);
@@ -43,7 +70,7 @@
 
 		ctx.fillRect(xPos, yPos, gridSizeX, gridSizeY);
 	}
-	function drawGrid() {
+	function drawGridLines() {
 		const gridSizeX = canvasWidth / gridWidth;
 		const gridSizeY = canvasHeight / gridHeight;
 
@@ -72,6 +99,17 @@
 			ctx.stroke();
 		}
 	}
+
+	function displayGridNodes() {
+        gridContent.forEach((column:GridNode[],x) => {
+            column.forEach((node:GridNode, y) => {
+                if(node.isWalkable)
+                {
+                    drawGridSquare(x,y, "#646464");
+                }
+            });
+        });
+    }
 </script>
 
 <canvas
