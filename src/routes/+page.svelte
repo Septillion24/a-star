@@ -21,31 +21,28 @@
 		if (ctx === undefined) {
 			throw new Error('Could not get context of canvas');
 		}
-		generateNodes();  
-        refreshCanvas();
+		generateNodes();
+		refreshCanvas();
 	}
-
-    function debugDisplayTable(){
-        const tableContent = gridContent.map((row) =>
-        row.reduce((acc, node, index) => {
-            (acc as { [key: string]: string })[`Col ${index}`] = node.isWalkable ? 'NO' : 'y'; // all this to make it easy to read in the grid
-            return acc;
-        }, {})
+	function debugDisplayTable() {
+		const tableContent = gridContent.map((row) =>
+			row.reduce((acc, node, index) => {
+				(acc as { [key: string]: string })[`Col ${index}`] = node.isWalkable ? 'NO' : 'y'; // all this to make it easy to read in the grid
+				return acc;
+			}, {})
 		);
 		console.table(tableContent);
-    }
-
-    function refreshCanvas() {
-        clearCanvas();
-        displayGridNodes();
-        drawGridLines();
-        
-    }
+	}
+	function refreshCanvas() {
+		clearCanvas();
+		displayGridNodes();
+		drawGridLines();
+	}
 	function generateNodes() {
 		for (let x = 0; x < gridWidth; x++) {
 			for (let y = 0; y < gridHeight; y++) {
 				const isWalkable: boolean = Math.random() <= unWalkableChance ? true : false;
-				gridContent[x][y] = new GridNode(x, y, {isWalkable});
+				gridContent[x][y] = new GridNode(x, y, { isWalkable });
 			}
 		}
 	}
@@ -99,17 +96,15 @@
 			ctx.stroke();
 		}
 	}
-
 	function displayGridNodes() {
-        gridContent.forEach((column:GridNode[],x) => {
-            column.forEach((node:GridNode, y) => {
-                if(node.isWalkable)
-                {
-                    drawGridSquare(x,y, "#646464");
-                }
-            });
-        });
-    }
+		gridContent.forEach((column: GridNode[], x) => {
+			column.forEach((node: GridNode, y) => {
+				if (node.isWalkable) {
+					drawGridSquare(x, y, '#646464');
+				}
+			});
+		});
+	}
 </script>
 
 <canvas
