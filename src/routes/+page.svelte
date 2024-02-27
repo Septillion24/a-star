@@ -2,19 +2,22 @@
 	import { onMount } from 'svelte';
 	import { GridNode } from '../GridNode';
 
-	let canvas: HTMLCanvasElement;
-	let canvasHeight: number = 700;
-	let canvasWidth: number = 700;
-	let gridHeight: number = 15;
-	let gridWidth: number = 15;
-	let unWalkableChance = 0.1;
 	let gridContent: GridNode[][] = new Array(gridHeight)
 		.fill(null)
 		.map(() => new Array(gridWidth).fill(null)); // 2d array filled with null
 
+	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
-    let goalNode: {x:number, y:number};
-    let startNode: {x:number, y:number};
+	
+    let canvasHeight: number = 700;
+	let canvasWidth: number = 700;
+	let gridHeight: number = 15;
+	let gridWidth: number = 15;
+	let unWalkableChance = 0.1;
+
+	let goalNode: { x: number; y: number };
+	let startNode: { x: number; y: number };
+	let currentNode: { x: number; y: number };
 
 	onMount(handleSetup);
 
@@ -49,7 +52,7 @@
 		}
 
 		placeRandomStartPosition();
-        placeRandomObjectivePosition();
+		placeRandomObjectivePosition();
 	}
 	function clearCanvas() {
 		ctx.fillStyle = 'white';
@@ -128,6 +131,7 @@
 
 		gridContent[x][y] = new GridNode(x, y, { isObjective: true });
 	}
+	function doAlgorithmStep() {}
 </script>
 
 <canvas
