@@ -16,4 +16,14 @@ export class GridNode {
 		this.yPos = y;
 		this.contents = { isWalkable, isObjective, isStartingPoint };
 	}
+
+    distanceTo(xGoal:number,yGoal:number): number{
+        const deltaX = Math.abs(this.xPos - xGoal);
+        const deltaY = Math.abs(this.yPos - yGoal);
+
+        const distance = Math.sqrt(deltaX**2 + deltaY**2); 
+
+        return distance;
+    }
+
 }

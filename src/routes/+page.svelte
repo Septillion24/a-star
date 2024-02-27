@@ -13,6 +13,8 @@
 		.map(() => new Array(gridWidth).fill(null)); // 2d array filled with null
 
 	let ctx: CanvasRenderingContext2D;
+    let goalNode: {x:number, y:number};
+    let startNode: {x:number, y:number};
 
 	onMount(handleSetup);
 
