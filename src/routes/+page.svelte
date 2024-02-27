@@ -2,32 +2,43 @@
 	import { onMount } from 'svelte';
 	import { GridNode } from '../GridNode';
 
-	let gridContent: GridNode[][] = new Array(gridHeight)
-		.fill(null)
-		.map(() => new Array(gridWidth).fill(null)); // 2d array filled with null
-
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
-	
-    let canvasHeight: number = 700;
+
+	let canvasHeight: number = 700;
 	let canvasWidth: number = 700;
 	let gridHeight: number = 15;
 	let gridWidth: number = 15;
 	let unWalkableChance = 0.1;
 
+	let gridContent: GridNode[][] = new Array(gridHeight)
+		.fill(null)
+		.map(() => new Array(gridWidth).fill(null)); // 2d array filled with null
 	let goalNode: { x: number; y: number };
 	let startNode: { x: number; y: number };
 	let currentNode: { x: number; y: number };
+	let container: HTMLDivElement;
 
-	onMount(handleSetup);
+	onMount(() => {
+		handleSetup();
+	});
 
-	function handleSetup(): void {
+	function handleSetup() {
 		ctx = canvas.getContext('2d')!;
+		container = canvas.parentNode as HTMLDivElement;
+
 		if (ctx === undefined) {
 			throw new Error('Could not get context of canvas');
 		}
 		generateNodes();
 		refreshCanvas();
+
+		const resizeObserver = new ResizeObserver(() => resizeCanvas());
+		resizeObserver.observe(container);
+
+		return () => {
+			resizeObserver.disconnect(); // Clean up the observer on component destroy
+		};
 	}
 	function debugDisplayTable() {
 		const tableContent = gridContent.map((row) =>
@@ -38,10 +49,19 @@
 		);
 		console.table(tableContent);
 	}
+	function resizeCanvas() {
+		canvasWidth = container.offsetWidth;
+		canvasHeight = container.offsetHeight;
+		// Call any function to redraw the canvas if needed
+		refreshCanvas();
+	}
 	function refreshCanvas() {
-		clearCanvas();
-		displayGridNodes();
-		drawGridLines();
+		if (canvas !== undefined && ctx !== undefined) {
+			clearCanvas();
+			displayGridNodes();
+			drawGridLines();
+			console.log('Refreshed!');
+		}
 	}
 	function generateNodes() {
 		for (let x = 0; x < gridWidth; x++) {
@@ -132,20 +152,28 @@
 		gridContent[x][y] = new GridNode(x, y, { isObjective: true });
 	}
 	function doAlgorithmStep() {}
+
+	$: if (canvasHeight || canvasWidth) {
+		if (typeof window !== 'undefined') {
+			// browser-only
+			requestAnimationFrame(refreshCanvas);
+		}
+	}
 </script>
 
-<canvas
-	bind:this={canvas}
-	on:load={handleSetup}
-	height={canvasHeight}
-	width={canvasWidth}
-	class="mainCanvas"
-></canvas>
+<div class="canvasContainer" style="width: {canvasWidth}px; height: {canvasHeight}px;">
+	<canvas bind:this={canvas} height={canvasHeight} width={canvasWidth} class="mainCanvas"></canvas>
+</div>
+<input type="number" step="50" bind:value={canvasHeight} />
 
 <style lang="scss">
 	.mainCanvas {
+		background-color: white;
+	}
+	.canvasContainer {
 		box-shadow: 0.2vmin 0.2vmin 0.5vmin black;
-		background-color: rgb(255, 0, 0);
+		resize: both;
+		overflow: hidden;
 	}
 	:global(body) {
 		background-color: hsl(226, 17%, 55%);
