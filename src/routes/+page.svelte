@@ -27,7 +27,7 @@
 	function debugDisplayTable() {
 		const tableContent = gridContent.map((row) =>
 			row.reduce((acc, node, index) => {
-				(acc as { [key: string]: string })[`Col ${index}`] = node.isWalkable ? 'NO' : 'y'; // all this to make it easy to read in the grid
+				(acc as { [key: string]: string })[`Col ${index}`] = node.contents.isWalkable ? 'NO' : 'y'; // all this to make it easy to read in the grid
 				return acc;
 			}, {})
 		);
@@ -45,6 +45,9 @@
 				gridContent[x][y] = new GridNode(x, y, { isWalkable });
 			}
 		}
+
+		placeRandomStartPosition();
+        placeRandomObjectivePosition();
 	}
 	function clearCanvas() {
 		ctx.fillStyle = 'white';
@@ -99,11 +102,29 @@
 	function displayGridNodes() {
 		gridContent.forEach((column: GridNode[], x) => {
 			column.forEach((node: GridNode, y) => {
-				if (node.isWalkable) {
+				if (node.contents.isWalkable) {
 					drawGridSquare(x, y, '#646464');
+				}
+				if (node.contents.isStartingPoint) {
+					drawGridSquare(x, y, '#58ff4d');
+				}
+				if (node.contents.isObjective) {
+					drawGridSquare(x, y, '#4dafff');
 				}
 			});
 		});
+	}
+	function placeRandomStartPosition() {
+		const x = Math.floor(Math.random() * gridWidth);
+		const y = Math.floor(Math.random() * gridHeight);
+
+		gridContent[x][y] = new GridNode(x, y, { isStartingPoint: true });
+	}
+	function placeRandomObjectivePosition() {
+		const x = Math.floor(Math.random() * gridWidth);
+		const y = Math.floor(Math.random() * gridHeight);
+
+		gridContent[x][y] = new GridNode(x, y, { isObjective: true });
 	}
 </script>
 

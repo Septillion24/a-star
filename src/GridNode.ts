@@ -1,16 +1,19 @@
 export class GridNode {
 	xPos: number;
 	yPos: number;
-	isWalkable: boolean;
 	contents: {
 		isWalkable: boolean;
 		isObjective: boolean;
+		isStartingPoint: boolean;
 	};
 
-	constructor(x: number, y: number, { isWalkable = true, isObjective = false } = {}) {
+	constructor(
+		x: number,
+		y: number,
+		{ isWalkable = true, isObjective = false, isStartingPoint = false } = {}
+	) {
 		this.xPos = x;
 		this.yPos = y;
-		this.isWalkable = isWalkable;
-		this.contents = { isWalkable, isObjective };
+		this.contents = { isWalkable, isObjective, isStartingPoint };
 	}
 }
