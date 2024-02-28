@@ -21,8 +21,8 @@
 	let goalNode: GridNode;
 	let startNode: GridNode;
 	let currentNode: GridNode;
-	let openSet: GridNode[] = [];
-	let closedSet: GridNode[] = [];
+	let openSet: Set<GridNode> = new Set<GridNode>();
+	let closedSet: Set<GridNode> = new Set<GridNode>();
 
 	// display flags
 	let overlays = {
@@ -47,28 +47,17 @@
 		const resizeObserver = new ResizeObserver(() => resizeCanvas());
 		resizeObserver.observe(container);
 
+		getNeighbors(currentNode).forEach((node: GridNode) => {
+			defineNodeScore(node);
+		});
+
 		// debugDisplayTable();
-		doAlgorithmStep();
+
+		// doAlgorithmStep();
 
 		return () => {
 			resizeObserver.disconnect(); // Clean up the observer on component destroy
 		};
-	}
-	function debugDisplayTable() {
-		const numRows = gridContent.length;
-		const numCols = gridContent[0].length;
-		let tableContent = [];
-
-		for (let col = 0; col < numCols; col++) {
-			let rowObject = {};
-			for (let row = 0; row < numRows; row++) {
-				let rowObject: { [key: string]: any } = {};
-				rowObject[`Row ${row}`] = calculateFScoreForNode(gridContent[row][col]);
-			}
-			tableContent.push(rowObject);
-		}
-
-		console.table(tableContent);
 	}
 	function twoDimensionalMap(callBack: (element: GridNode) => GridNode | void) {
 		gridContent.forEach((column) => {
@@ -80,13 +69,12 @@
 	}
 	function displayHeuristicOverlay() {
 		displayOverlay((node: GridNode) => {
-			const fScore = calculateFScoreForNode(node);
-			return scaleToBlackBodyHex(fScore);
+			return scaleToBlackBodyHex(getNodeScore(node).f);
 		});
 	}
 	function displaySetOverlay(node: GridNode): string {
-		if (openSet.includes(node)) return '#ff0000';
-		if (closedSet.includes(node)) return '#0000ff';
+		if (openSet.has(node)) return '#ff0000';
+		if (closedSet.has(node)) return '#0000ff';
 		else return '';
 	}
 	function toggleOverlay(overlay: keyof typeof overlays) {
@@ -171,7 +159,6 @@
 			displayOverlay(displaySetOverlay);
 		}
 	}
-
 	function generateNodes() {
 		for (let x = 0; x < gridWidth; x++) {
 			for (let y = 0; y < gridHeight; y++) {
@@ -253,7 +240,7 @@
 		const y = Math.floor(Math.random() * gridHeight);
 		startNode = gridContent[x][y];
 		currentNode = startNode;
-		openSet = [gridContent[x][y]];
+		openSet.add(gridContent[x][y]);
 		gridContent[x][y] = new GridNode(x, y, { isStartingPoint: true });
 	}
 	function placeRandomObjectivePosition() {
@@ -263,65 +250,53 @@
 		gridContent[x][y] = new GridNode(x, y, { isObjective: true });
 	}
 	function doAlgorithmStep(): boolean {
-		if (checkWinningCondiiton()) return true;
-		
-        if (openSet.length === 0) throw new Error('Open set empty!');
-		
+		closedSet = new Set<GridNode>([...closedSet, currentNode]);
+		openSet = new Set<GridNode>([...openSet].filter((x) => !closedSet.has(x)));
+		console.log(openSet);
 
-        // let bestNodeToCheck = openSet[0];
-        let bestNodeToCheck = openSet.reduce((prev, curr) =>
-        prev.fScore! < curr.fScore! ? prev : curr
-		);
-        
-        moveCurrentNodeToClosedSet();
-		loopThroughOpenSet();
+		const neighbors = getNeighbors(currentNode);
+		neighbors.forEach((node: GridNode) => {
+			checkIfGoalNode(node);
+			defineNodeScore(node);
+			if (closedSet.has(node) && node.gScore! > currentNode.gScore!) {
+				node.previousNodeInPath = currentNode;
+			}
+			if (!openSet.has(node)) {
+				defineNodeScore(node);
+				openSet.add(node);
+				node.previousNodeInPath = currentNode;
+			}
+		});
 
-		if (openSet.length === 0) throw new Error('No path!');
-		//Choose the node with the lowest F in the open list as the new current node.
-		currentNode = bestNodeToCheck;
-		openSet.splice(openSet.indexOf(currentNode), 1);
+		currentNode = neighbors.reduce((prev, curr) => (prev.fScore! < curr.fScore! ? prev : curr));
 
-		const neighbors = getNeighbors(currentNode)
-			.map((element) => gridContent[element.x][element.y])
-			.filter((node) => !closedSet.includes(node));
-
-		openSet = [...openSet, ...neighbors];
+		if (openSet.size === 0) throw new Error('Open set empty!');
 		refreshCanvas();
-
 		return false;
-
-		function moveCurrentNodeToClosedSet() {
-			currentNode = bestNodeToCheck;
-			closedSet = [...closedSet, currentNode];
-		}
-		function loopThroughOpenSet() {
-			openSet.forEach((node) => {
-				// check goal
-				if (node === goalNode) return; // do something here
-				// caclulate f and g
-				node.fScore = calculateFScoreForNode(node);
-				node.gScore = calculateGscoreForNode(node);
-				//if in closed list skip
-				if (closedSet.includes(node) && node.gScore > currentNode.gScore!) return;
-				// add to best node if its the best
-				// if (node.fScore > bestNodeToCheck.fScore!) bestNodeToCheck = node;
-			});
-		}
 	}
-	function calculateGscoreForNode(node: GridNode): number {
-		return node.getDepthInTree();
+	function checkIfGoalNode(node: GridNode) {
+		return false;
 	}
-	function calculateFScoreForNode(node: GridNode): number {
-		const gScore = calculateGscoreForNode(node);
+	function defineNodeScore(node: GridNode) {
+		if (!node || !goalNode) {
+			console.error('Node or goalNode is undefined.');
+			return;
+		}
+		node.gScore = node.getDepthInTree();
+		node.hScore = node.distanceTo(goalNode.xPos, goalNode.yPos);
+		node.fScore = node.gScore + node.hScore;
+	}
+	function getNodeScore(node: GridNode): { g: number; h: number; f: number } {
+		const gScore = node.getDepthInTree();
 		const hScore = node.distanceTo(goalNode.xPos, goalNode.yPos);
-
-		return gScore + hScore;
+		const fScore = gScore + hScore;
+		return { g: gScore, h: hScore, f: fScore };
 	}
 	function getNeighbors(
 		node: GridNode,
 		includeUnWalkables: boolean = false,
 		includeCheckedNeighbors = false
-	): { x: number; y: number }[] {
+	): GridNode[] {
 		const { x, y } = { x: node.xPos, y: node.yPos };
 		if (!isWithinRange({ x, y })) throw new Error(`Position out of range: ${x},${y}`);
 		let neighborPositions: { x: number; y: number }[] = [
@@ -334,23 +309,23 @@
 
 		if (!includeCheckedNeighbors)
 			neighborPositions = neighborPositions.filter((element) => {
-				return !closedSet.includes(gridContent[element.x][element.y]);
+				return !closedSet.has(gridContent[element.x][element.y]);
 			});
 		if (!includeUnWalkables)
 			neighborPositions = neighborPositions.filter(
 				({ x, y }) => !gridContent[x][y].contents.isWalkable
 			);
-		return neighborPositions;
+
+		const neighborNodes = neighborPositions.map((node) => {
+			return gridContent[node.x][node.y];
+		});
+		return neighborNodes;
 	}
 	function isWithinRange(position: { x: number; y: number }): boolean {
 		const { x, y } = position;
 		if (x < 0 || x > gridWidth - 1) return false;
 		if (y < 0 || y > gridHeight - 1) return false;
 		return true;
-	}
-	function checkWinningCondiiton(): boolean {
-		if (currentNode == goalNode) return true;
-		return false;
 	}
 
 	$: if (canvasHeight || canvasWidth) {
