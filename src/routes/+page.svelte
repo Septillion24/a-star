@@ -22,12 +22,12 @@
 	let startNode: { x: number; y: number };
 	let currentNode: { x: number; y: number };
 	let openSet: GridNode[] = [];
-    let closedSet:GridNode[] = [];
+	let closedSet: GridNode[] = [];
 
 	// display flags
 	let overlays = {
 		heuristicOverlay: false,
-        setsOverlay: true,
+		setsOverlay: true
 	};
 
 	onMount(() => {
@@ -48,7 +48,7 @@
 		resizeObserver.observe(container);
 
 		// debugDisplayTable();
-        doAlgorithmStep();
+		doAlgorithmStep();
 
 		return () => {
 			resizeObserver.disconnect(); // Clean up the observer on component destroy
@@ -84,6 +84,11 @@
 			return scaleToBlackBodyHex(fScore);
 		});
 	}
+	function displaySetOverlay(node: GridNode): string {
+		if (openSet.includes(node)) return '#ff0000';
+		if (closedSet.includes(node)) return '#0000ff';
+		else return '';
+	}
 	function toggleOverlay(overlay: keyof typeof overlays) {
 		overlays[overlay] = !overlays[overlay];
 		refreshCanvas();
@@ -93,7 +98,7 @@
 	) {
 		twoDimensionalMap((element: GridNode) => {
 			const result = callBack(element);
-            if(result === "") return;
+			if (result === '') return;
 			let colorString;
 			if (typeof result === 'string') {
 				colorString = result;
@@ -152,20 +157,21 @@
 		if (canvas !== undefined && ctx !== undefined) {
 			clearCanvas();
 
-			displayOverlays();
+			displayAllOverlays();
 			displayGridNodes();
 
 			drawGridLines();
 		}
 	}
-	function displayOverlays() {
+	function displayAllOverlays() {
 		if (overlays.heuristicOverlay) {
 			displayHeuristicOverlay();
 		}
-        if (overlays.setsOverlay) {
-			displayOverlay((node:GridNode)=> openSet.includes(node) ? "#ff0000" : "")
+		if (overlays.setsOverlay) {
+			displayOverlay(displaySetOverlay);
 		}
 	}
+
 	function generateNodes() {
 		for (let x = 0; x < gridWidth; x++) {
 			for (let y = 0; y < gridHeight; y++) {
@@ -247,7 +253,7 @@
 		const y = Math.floor(Math.random() * gridHeight);
 		startNode = { x, y };
 		currentNode = startNode;
-        openSet = [gridContent[x][y]];
+		openSet = [gridContent[x][y]];
 		gridContent[x][y] = new GridNode(x, y, { isStartingPoint: true });
 	}
 	function placeRandomObjectivePosition() {
@@ -260,28 +266,31 @@
 		if (!openSet) throw new Error('Open set empty!');
 		let bestNodeToCheck = openSet[0];
 
-        console.log(openSet);
+		console.log(openSet);
 
 		openSet.forEach((node) => {
 			node.fScore = calculateFScoreForNode(node);
 			if (!bestNodeToCheck) bestNodeToCheck = node;
-			if (node.fScore > bestNodeToCheck.fScore!) bestNodeToCheck = node;
+			if (node.fScore < bestNodeToCheck.fScore!) bestNodeToCheck = node;
 		});
 		currentNode = { x: bestNodeToCheck.xPos, y: bestNodeToCheck.yPos };
 		const neighbors = getNeighbors(currentNode).map((element) => gridContent[element.x][element.y]);
-        closedSet = [...closedSet, ...openSet];
-        openSet = neighbors;
-        console.log(openSet);
+		closedSet = [...closedSet, ...openSet];
+		openSet.splice(openSet.indexOf(gridContent[currentNode.x][currentNode.y]), 1);
+		openSet = [...openSet, ...neighbors];
+		console.log(openSet);
+		refreshCanvas();
 	}
 	function calculateFScoreForNode(node: GridNode): number {
-		const gScore = node.getDepthInTree(); 
+		const gScore = node.getDepthInTree();
 		const hScore = node.distanceTo(goalNode.x, goalNode.y);
 
 		return gScore + hScore;
 	}
 	function getNeighbors(
 		position: { x: number; y: number },
-		includeUnWalkables: boolean = false
+		includeUnWalkables: boolean = false,
+		includeCheckedNeighbors = false
 	): { x: number; y: number }[] {
 		const { x, y } = position;
 		if (!isWithinRange(position)) throw new Error(`Position out of range: ${x},${y}`);
@@ -292,15 +301,26 @@
 			{ x: x, y: y + 1 } // down
 		];
 		neighborPositions = neighborPositions.filter(isWithinRange);
-        if (!includeUnWalkables)
+
+		console.log(`neighborPositions: ${neighborPositions}`);
+		console.log(`Closed set: ${closedSet}`);
+		if (!includeCheckedNeighbors)
+			neighborPositions = neighborPositions.filter((element) => {
+				return !closedSet.includes(gridContent[element.x][element.y]);
+			});
+		if (!includeUnWalkables)
 			neighborPositions.filter(({ x, y }) => gridContent[x][y].contents.isWalkable);
 		return neighborPositions;
 	}
 	function isWithinRange(position: { x: number; y: number }): boolean {
 		const { x, y } = position;
-		if (x < 0 || x > gridWidth-1) return false;
-		if (y < 0 || y > gridHeight-1) return false;
+		if (x < 0 || x > gridWidth - 1) return false;
+		if (y < 0 || y > gridHeight - 1) return false;
 		return true;
+	}
+	function checkWinningCondiiton(): boolean {
+		if (currentNode == goalNode) return true;
+		return false;
 	}
 
 	$: if (canvasHeight || canvasWidth) {
@@ -320,6 +340,11 @@
 >
 <button on:click={() => toggleOverlay('setsOverlay')}
 	>Sets overlay {overlays.setsOverlay ? 'ON' : 'OFF'}</button
+>
+<button
+	on:click={() => {
+		doAlgorithmStep();
+	}}>Do next step</button
 >
 
 <style lang="scss">
