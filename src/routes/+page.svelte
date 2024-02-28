@@ -18,9 +18,9 @@
 	let gridContent: GridNode[][] = new Array(gridHeight)
 		.fill(null)
 		.map(() => new Array(gridWidth).fill(null)); // 2d array filled with null
-	let goalNode: { x: number; y: number };
-	let startNode: { x: number; y: number };
-	let currentNode: { x: number; y: number };
+	let goalNode: GridNode;
+	let startNode: GridNode;
+	let currentNode: GridNode;
 	let openSet: GridNode[] = [];
 	let closedSet: GridNode[] = [];
 
@@ -251,7 +251,7 @@
 	function placeRandomStartPosition() {
 		const x = Math.floor(Math.random() * gridWidth);
 		const y = Math.floor(Math.random() * gridHeight);
-		startNode = { x, y };
+		startNode = gridContent[x][y];
 		currentNode = startNode;
 		openSet = [gridContent[x][y]];
 		gridContent[x][y] = new GridNode(x, y, { isStartingPoint: true });
@@ -259,56 +259,51 @@
 	function placeRandomObjectivePosition() {
 		const x = Math.floor(Math.random() * gridWidth);
 		const y = Math.floor(Math.random() * gridHeight);
-		goalNode = { x, y };
+		goalNode = gridContent[x][y];
 		gridContent[x][y] = new GridNode(x, y, { isObjective: true });
 	}
-	function doAlgorithmStep():boolean {
-
-        if (checkWinningCondiiton()) return true;
+	function doAlgorithmStep(): boolean {
+		if (checkWinningCondiiton()) return true;
 
 		if (!openSet) throw new Error('Open set empty!');
 		let bestNodeToCheck = openSet[0];
 
-        moveCurrentNodeToClosedSet();
+		moveCurrentNodeToClosedSet();
 
 		openSet.forEach((node) => {
 			node.fScore = calculateFScoreForNode(node);
-            if (closedSet.includes(node)) return;
+			if (closedSet.includes(node)) return;
 			if (!bestNodeToCheck) bestNodeToCheck = node;
 			if (node.fScore < bestNodeToCheck.fScore!) bestNodeToCheck = node;
 		});
 
+		openSet.splice(openSet.indexOf(currentNode), 1);
 
-        openSet.splice(openSet.indexOf(gridContent[currentNode.x][currentNode.y]), 1);
-		
 		const neighbors = getNeighbors(currentNode).map((element) => gridContent[element.x][element.y]);
-		
+
 		openSet = [...openSet, ...neighbors];
 		refreshCanvas();
-        
-        return false;
 
+		return false;
 
-
-        function moveCurrentNodeToClosedSet()
-        {
-            currentNode = { x: bestNodeToCheck.xPos, y: bestNodeToCheck.yPos }; 
-            closedSet = [...closedSet, gridContent[currentNode.x][currentNode.y]]; 
-        }
+		function moveCurrentNodeToClosedSet() {
+			currentNode = bestNodeToCheck;
+			closedSet = [...closedSet, currentNode];
+		}
 	}
 	function calculateFScoreForNode(node: GridNode): number {
 		const gScore = node.getDepthInTree();
-		const hScore = node.distanceTo(goalNode.x, goalNode.y);
+		const hScore = node.distanceTo(goalNode.xPos, goalNode.yPos);
 
 		return gScore + hScore;
 	}
 	function getNeighbors(
-		position: { x: number; y: number },
+		node: GridNode,
 		includeUnWalkables: boolean = false,
 		includeCheckedNeighbors = false
 	): { x: number; y: number }[] {
-		const { x, y } = position;
-		if (!isWithinRange(position)) throw new Error(`Position out of range: ${x},${y}`);
+		const { x, y } = { x: node.xPos, y: node.yPos };
+		if (!isWithinRange({ x, y })) throw new Error(`Position out of range: ${x},${y}`);
 		let neighborPositions: { x: number; y: number }[] = [
 			{ x: x - 1, y: y }, // left
 			{ x: x, y: y - 1 }, // up
