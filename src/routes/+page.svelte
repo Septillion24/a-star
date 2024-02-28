@@ -49,7 +49,6 @@
 
 		// debugDisplayTable();
         doAlgorithmStep();
-        displayOverlay(()=>"#fffff")
 
 		return () => {
 			resizeObserver.disconnect(); // Clean up the observer on component destroy
