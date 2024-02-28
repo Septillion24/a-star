@@ -74,10 +74,25 @@
 		});
 	}
 	function displayHeuristicOverlay() {
-		twoDimensionalMap((node: GridNode) => {
+		displayOverlay((node: GridNode) => {
 			const fScore = calculateFScoreForNode(node);
-			drawGridSquare(node.xPos, node.yPos, `${scaleToBlackBodyHex(fScore)}`);
-			console.log(node.xPos);
+			return scaleToBlackBodyHex(fScore);
+		});
+	}
+
+	function displayOverlay(
+		callBack: (node: GridNode) => string | { r: number; g: number; b: number }
+	) {
+		twoDimensionalMap((element: GridNode) => {
+			const result = callBack(element);
+			let colorString;
+			if (typeof result === 'string') {
+				colorString = result;
+			} else {
+				const { r, g, b } = result;
+				colorString = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+			}
+            drawGridSquare(element.xPos,element.yPos,colorString);
 		});
 	}
 	function scaleToBlackBodyHex(scale: number): string {
