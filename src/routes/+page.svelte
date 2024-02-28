@@ -1,18 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { GridNode } from '../GridNode';
-	import { goto } from '$app/navigation';
 
+	// DOM elements
 	let canvas: HTMLCanvasElement;
 	let container: HTMLDivElement;
 	let ctx: CanvasRenderingContext2D;
 
+	// canvas information
 	let canvasHeight: number = 700;
 	let canvasWidth: number = 700;
 	let gridHeight: number = 15;
 	let gridWidth: number = 15;
 	let unWalkableChance = 0.1;
 
+	// node data
 	let gridContent: GridNode[][] = new Array(gridHeight)
 		.fill(null)
 		.map(() => new Array(gridWidth).fill(null)); // 2d array filled with null
@@ -125,8 +127,8 @@
 	function refreshCanvas() {
 		if (canvas !== undefined && ctx !== undefined) {
 			clearCanvas();
-			
-            displayOverlays();
+
+			displayOverlays();
 			displayGridNodes();
 
 			drawGridLines();
@@ -137,7 +139,6 @@
 			displayHeuristicOverlay();
 		}
 	}
-
 	function generateNodes() {
 		for (let x = 0; x < gridWidth; x++) {
 			for (let y = 0; y < gridHeight; y++) {
