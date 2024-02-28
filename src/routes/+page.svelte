@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { GridNode } from '../GridNode';
+	import { goto } from '$app/navigation';
 
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
@@ -164,7 +165,7 @@
 <div class="canvasContainer" style="width: {canvasWidth}px; height: {canvasHeight}px;">
 	<canvas bind:this={canvas} height={canvasHeight} width={canvasWidth} class="mainCanvas"></canvas>
 </div>
-<input type="number" step="50" bind:value={canvasHeight} />
+<button on:click={() => window.location.reload()}>Reload</button>
 
 <style lang="scss">
 	.mainCanvas {
