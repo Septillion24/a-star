@@ -22,6 +22,7 @@
 	let startNode: { x: number; y: number };
 	let currentNode: { x: number; y: number };
 	let openSet: GridNode[] = [];
+    let closedSet:GridNode[] = [];
 
 	// display flags
 	let overlays = {
@@ -249,10 +250,18 @@
 		gridContent[x][y] = new GridNode(x, y, { isObjective: true });
 	}
 	function doAlgorithmStep() {
+		if (!openSet) throw new Error('Open set empty!');
+		let bestNodeToCheck = openSet[0];
+
 		openSet.forEach((node) => {
 			node.fScore = calculateFScoreForNode(node);
-            getNeighbors(currentNode);
+			if (!bestNodeToCheck) bestNodeToCheck = node;
+			if (node.fScore > bestNodeToCheck.fScore!) bestNodeToCheck = node;
 		});
+		currentNode = { x: bestNodeToCheck.xPos, y: bestNodeToCheck.yPos };
+		const neighbors = getNeighbors(currentNode).map((element) => gridContent[element.x][element.y]);
+        closedSet = [...closedSet, ...openSet];
+        openSet = neighbors;
 	}
 	function calculateFScoreForNode(node: GridNode): number {
 		const gScore = node.getDepthInTree();
