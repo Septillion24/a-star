@@ -25,8 +25,8 @@
 
 	// display flags
 	let overlays = {
-        heuristicOverlay:false
-    };
+		heuristicOverlay: false
+	};
 
 	onMount(() => {
 		handleSetup();
@@ -81,11 +81,10 @@
 			return scaleToBlackBodyHex(fScore);
 		});
 	}
-    function toggleOverlay(overlay:keyof typeof overlays)
-    {
-        overlays.heuristicOverlay = !overlays.heuristicOverlay;
-        refreshCanvas();
-    }
+	function toggleOverlay(overlay: keyof typeof overlays) {
+		overlays.heuristicOverlay = !overlays.heuristicOverlay;
+		refreshCanvas();
+	}
 	function displayOverlay(
 		callBack: (node: GridNode) => string | { r: number; g: number; b: number }
 	) {
@@ -273,8 +272,8 @@
 	<canvas bind:this={canvas} height={canvasHeight} width={canvasWidth} class="mainCanvas"></canvas>
 </div>
 <button on:click={() => window.location.reload()}>Reload</button>
-<button
-	on:click={()=>toggleOverlay('heuristicOverlay')}>Heuristic overlay {overlays.heuristicOverlay ? 'ON' : 'OFF'}</button
+<button on:click={() => toggleOverlay('heuristicOverlay')}
+	>Heuristic overlay {overlays.heuristicOverlay ? 'ON' : 'OFF'}</button
 >
 
 <style lang="scss">
