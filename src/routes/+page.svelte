@@ -264,22 +264,26 @@
 	}
 	function doAlgorithmStep(): boolean {
 		if (checkWinningCondiiton()) return true;
+		
+        if (openSet.length === 0) throw new Error('Open set empty!');
+		
 
-		if (!openSet) throw new Error('Open set empty!');
-		let bestNodeToCheck = openSet[0];
+        // let bestNodeToCheck = openSet[0];
+        let bestNodeToCheck = openSet.reduce((prev, curr) =>
+        prev.fScore! < curr.fScore! ? prev : curr
+		);
+        
+        moveCurrentNodeToClosedSet();
+		loopThroughOpenSet();
 
-		moveCurrentNodeToClosedSet();
-
-		openSet.forEach((node) => {
-			node.fScore = calculateFScoreForNode(node);
-			if (closedSet.includes(node)) return;
-			if (!bestNodeToCheck) bestNodeToCheck = node;
-			if (node.fScore < bestNodeToCheck.fScore!) bestNodeToCheck = node;
-		});
-
+		if (openSet.length === 0) throw new Error('No path!');
+		//Choose the node with the lowest F in the open list as the new current node.
+		currentNode = bestNodeToCheck;
 		openSet.splice(openSet.indexOf(currentNode), 1);
 
-		const neighbors = getNeighbors(currentNode).map((element) => gridContent[element.x][element.y]);
+		const neighbors = getNeighbors(currentNode)
+			.map((element) => gridContent[element.x][element.y])
+			.filter((node) => !closedSet.includes(node));
 
 		openSet = [...openSet, ...neighbors];
 		refreshCanvas();
@@ -290,9 +294,25 @@
 			currentNode = bestNodeToCheck;
 			closedSet = [...closedSet, currentNode];
 		}
+		function loopThroughOpenSet() {
+			openSet.forEach((node) => {
+				// check goal
+				if (node === goalNode) return; // do something here
+				// caclulate f and g
+				node.fScore = calculateFScoreForNode(node);
+				node.gScore = calculateGscoreForNode(node);
+				//if in closed list skip
+				if (closedSet.includes(node) && node.gScore > currentNode.gScore!) return;
+				// add to best node if its the best
+				// if (node.fScore > bestNodeToCheck.fScore!) bestNodeToCheck = node;
+			});
+		}
+	}
+	function calculateGscoreForNode(node: GridNode): number {
+		return node.getDepthInTree();
 	}
 	function calculateFScoreForNode(node: GridNode): number {
-		const gScore = node.getDepthInTree();
+		const gScore = calculateGscoreForNode(node);
 		const hScore = node.distanceTo(goalNode.xPos, goalNode.yPos);
 
 		return gScore + hScore;
@@ -317,7 +337,9 @@
 				return !closedSet.includes(gridContent[element.x][element.y]);
 			});
 		if (!includeUnWalkables)
-			neighborPositions.filter(({ x, y }) => gridContent[x][y].contents.isWalkable);
+			neighborPositions = neighborPositions.filter(
+				({ x, y }) => !gridContent[x][y].contents.isWalkable
+			);
 		return neighborPositions;
 	}
 	function isWithinRange(position: { x: number; y: number }): boolean {

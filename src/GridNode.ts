@@ -2,6 +2,7 @@ export class GridNode {
 	xPos: number;
 	yPos: number;
 	fScore: number | undefined;
+    gScore: number | undefined;
 	previousNodeInPath: GridNode | undefined;
 	nextNodeInPath: GridNode | undefined;
 	contents: {
