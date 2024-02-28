@@ -241,6 +241,7 @@
 		const y = Math.floor(Math.random() * gridHeight);
 		startNode = { x, y };
 		currentNode = startNode;
+        openSet = [gridContent[x][y]];
 		gridContent[x][y] = new GridNode(x, y, { isStartingPoint: true });
 	}
 	function placeRandomObjectivePosition() {
