@@ -251,6 +251,7 @@
 	function doAlgorithmStep() {
 		openSet.forEach((node) => {
 			node.fScore = calculateFScoreForNode(node);
+            getNeighbors(currentNode);
 		});
 	}
 	function calculateFScoreForNode(node: GridNode): number {
@@ -258,6 +259,29 @@
 		const hScore = node.distanceTo(startNode.x, startNode.y);
 
 		return gScore + hScore;
+	}
+	function getNeighbors(
+		position: { x: number; y: number },
+		includeUnWalkables: boolean = false
+	): { x: number; y: number }[] {
+		const { x, y } = position;
+		if (!isWithinRange(position)) throw new Error(`Position out of range: ${x},${y}`);
+		let neighborPositions: { x: number; y: number }[] = [
+			{ x: x - 1, y: y }, // left
+			{ x: x, y: y - 1 }, // up
+			{ x: x + 1, y: y }, // right
+			{ x: x, y: y + 1 } // down
+		];
+		neighborPositions.filter(isWithinRange);
+		if (!includeUnWalkables)
+			neighborPositions.filter(({ x, y }) => gridContent[x][y].contents.isWalkable);
+		return neighborPositions;
+	}
+	function isWithinRange(position: { x: number; y: number }): boolean {
+		const { x, y } = position;
+		if (x < 0 || x > gridWidth) return false;
+		if (y < 0 || y > gridHeight) return false;
+		return true;
 	}
 
 	$: if (canvasHeight || canvasWidth) {
