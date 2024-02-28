@@ -1,6 +1,9 @@
 export class GridNode {
 	xPos: number;
 	yPos: number;
+	fScore: number | undefined;
+	previousNodeInPath: GridNode | undefined;
+	nextNodeInPath: GridNode | undefined;
 	contents: {
 		isWalkable: boolean;
 		isObjective: boolean;
@@ -17,13 +20,22 @@ export class GridNode {
 		this.contents = { isWalkable, isObjective, isStartingPoint };
 	}
 
-    distanceTo(xGoal:number,yGoal:number): number{
-        const deltaX = Math.abs(this.xPos - xGoal);
-        const deltaY = Math.abs(this.yPos - yGoal);
+	distanceTo(xGoal: number, yGoal: number): number {
+		const deltaX = Math.abs(this.xPos - xGoal);
+		const deltaY = Math.abs(this.yPos - yGoal);
 
-        const distance = Math.sqrt(deltaX**2 + deltaY**2); 
+		const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
 
-        return distance;
-    }
-
+		return distance;
+	}
+	setPrevious(previous: GridNode) {
+		this.previousNodeInPath = previous;
+	}
+	setNext(next: GridNode) {
+		this.nextNodeInPath = next;
+	}
+	getDepthInTree(currentCount: number = 0): number {
+        if(!this.previousNodeInPath) return 0;
+		return this.previousNodeInPath?.getDepthInTree(currentCount) + 1;
+	}
 }
