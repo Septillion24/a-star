@@ -26,7 +26,8 @@
 
 	// display flags
 	let overlays = {
-		heuristicOverlay: false
+		heuristicOverlay: false,
+        setsOverlay: true,
 	};
 
 	onMount(() => {
@@ -46,7 +47,9 @@
 		const resizeObserver = new ResizeObserver(() => resizeCanvas());
 		resizeObserver.observe(container);
 
-		debugDisplayTable();
+		// debugDisplayTable();
+        doAlgorithmStep();
+        displayOverlay(()=>"#fffff")
 
 		return () => {
 			resizeObserver.disconnect(); // Clean up the observer on component destroy
@@ -83,7 +86,7 @@
 		});
 	}
 	function toggleOverlay(overlay: keyof typeof overlays) {
-		overlays.heuristicOverlay = !overlays.heuristicOverlay;
+		overlays[overlay] = !overlays[overlay];
 		refreshCanvas();
 	}
 	function displayOverlay(
@@ -91,6 +94,7 @@
 	) {
 		twoDimensionalMap((element: GridNode) => {
 			const result = callBack(element);
+            if(result === "") return;
 			let colorString;
 			if (typeof result === 'string') {
 				colorString = result;
@@ -158,6 +162,9 @@
 	function displayOverlays() {
 		if (overlays.heuristicOverlay) {
 			displayHeuristicOverlay();
+		}
+        if (overlays.setsOverlay) {
+			displayOverlay((node:GridNode)=> openSet.includes(node) ? "#ff0000" : "")
 		}
 	}
 	function generateNodes() {
@@ -254,6 +261,8 @@
 		if (!openSet) throw new Error('Open set empty!');
 		let bestNodeToCheck = openSet[0];
 
+        console.log(openSet);
+
 		openSet.forEach((node) => {
 			node.fScore = calculateFScoreForNode(node);
 			if (!bestNodeToCheck) bestNodeToCheck = node;
@@ -263,10 +272,11 @@
 		const neighbors = getNeighbors(currentNode).map((element) => gridContent[element.x][element.y]);
         closedSet = [...closedSet, ...openSet];
         openSet = neighbors;
+        console.log(openSet);
 	}
 	function calculateFScoreForNode(node: GridNode): number {
-		const gScore = node.getDepthInTree();
-		const hScore = node.distanceTo(startNode.x, startNode.y);
+		const gScore = node.getDepthInTree(); 
+		const hScore = node.distanceTo(goalNode.x, goalNode.y);
 
 		return gScore + hScore;
 	}
@@ -282,15 +292,15 @@
 			{ x: x + 1, y: y }, // right
 			{ x: x, y: y + 1 } // down
 		];
-		neighborPositions.filter(isWithinRange);
-		if (!includeUnWalkables)
+		neighborPositions = neighborPositions.filter(isWithinRange);
+        if (!includeUnWalkables)
 			neighborPositions.filter(({ x, y }) => gridContent[x][y].contents.isWalkable);
 		return neighborPositions;
 	}
 	function isWithinRange(position: { x: number; y: number }): boolean {
 		const { x, y } = position;
-		if (x < 0 || x > gridWidth) return false;
-		if (y < 0 || y > gridHeight) return false;
+		if (x < 0 || x > gridWidth-1) return false;
+		if (y < 0 || y > gridHeight-1) return false;
 		return true;
 	}
 
@@ -308,6 +318,9 @@
 <button on:click={() => window.location.reload()}>Reload</button>
 <button on:click={() => toggleOverlay('heuristicOverlay')}
 	>Heuristic overlay {overlays.heuristicOverlay ? 'ON' : 'OFF'}</button
+>
+<button on:click={() => toggleOverlay('setsOverlay')}
+	>Sets overlay {overlays.setsOverlay ? 'ON' : 'OFF'}</button
 >
 
 <style lang="scss">
