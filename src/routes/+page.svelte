@@ -125,8 +125,8 @@
 	function refreshCanvas() {
 		if (canvas !== undefined && ctx !== undefined) {
 			clearCanvas();
-			
-            displayOverlays();
+
+			displayOverlays();
 			displayGridNodes();
 
 			drawGridLines();
@@ -137,7 +137,6 @@
 			displayHeuristicOverlay();
 		}
 	}
-
 	function generateNodes() {
 		for (let x = 0; x < gridWidth; x++) {
 			for (let y = 0; y < gridHeight; y++) {
