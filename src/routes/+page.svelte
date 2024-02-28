@@ -122,22 +122,7 @@
 		// Call any function to redraw the canvas if needed
 		refreshCanvas();
 	}
-	function refreshCanvas() {
-		if (canvas !== undefined && ctx !== undefined) {
-			clearCanvas();
-
-			displayOverlays();
-			displayGridNodes();
-
-			drawGridLines();
-		}
-	}
-	function displayOverlays() {
-		if (shouldDisplayHeuristicOverlay) {
-			displayHeuristicOverlay();
-		}
-	}
-	function generateNodes() {
+    function generateNodes() {
 		for (let x = 0; x < gridWidth; x++) {
 			for (let y = 0; y < gridHeight; y++) {
 				const isWalkable: boolean = Math.random() <= unWalkableChance ? true : false;
@@ -147,71 +132,6 @@
 
 		placeRandomStartPosition();
 		placeRandomObjectivePosition();
-	}
-	function clearCanvas() {
-		ctx.fillStyle = 'white';
-		ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-	}
-	function drawGridSquare(x: number, y: number, color: string = 'black') {
-		if (x > gridWidth - 1) {
-			throw new Error(`Index out of range. ${x} is greater than max index ${gridWidth - 1}`);
-		}
-		if (y > gridHeight - 1) {
-			throw new Error(`Index out of range. ${y} is greater than max index ${gridHeight - 1}`);
-		}
-
-		ctx.fillStyle = color;
-		const gridSizeX = canvasWidth / gridWidth;
-		const xPos = gridSizeX * x;
-
-		const gridSizeY = canvasHeight / gridHeight;
-		const yPos = gridSizeY * y;
-
-		ctx.fillRect(xPos, yPos, gridSizeX, gridSizeY);
-	}
-	function drawGridLines() {
-		const gridSizeX = canvasWidth / gridWidth;
-		const gridSizeY = canvasHeight / gridHeight;
-
-		for (let i = 0; i < gridWidth; i++) {
-			drawVerticalLine(i * gridSizeX);
-		}
-		for (let i = 0; i < gridHeight; i++) {
-			drawHorizontalLine(i * gridSizeY);
-		}
-		function drawVerticalLine(xPos: number) {
-			ctx.beginPath();
-			ctx.moveTo(xPos, 0);
-			ctx.lineTo(xPos, canvasHeight);
-
-			ctx.lineWidth = 0.5;
-
-			ctx.stroke();
-		}
-		function drawHorizontalLine(yPos: number) {
-			ctx.beginPath();
-			ctx.moveTo(0, yPos);
-			ctx.lineTo(canvasWidth, yPos);
-
-			ctx.lineWidth = 0.5;
-
-			ctx.stroke();
-		}
-	}
-	function displayGridNodes() {
-		gridContent.forEach((column: GridNode[], x) => {
-			column.forEach((node: GridNode, y) => {
-				if (node.contents.isWalkable) {
-					drawGridSquare(x, y, '#646464');
-				}
-				if (node.contents.isStartingPoint) {
-					drawGridSquare(x, y, '#58ff4d');
-				}
-				if (node.contents.isObjective) {
-					drawGridSquare(x, y, '#4dafff');
-				}
-			});
-		});
 	}
 	function placeRandomStartPosition() {
 		const x = Math.floor(Math.random() * gridWidth);

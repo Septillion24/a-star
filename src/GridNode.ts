@@ -35,7 +35,7 @@ export class GridNode {
 		this.nextNodeInPath = next;
 	}
 	getDepthInTree(currentCount: number = 0): number {
-        if(!this.previousNodeInPath) return 0;
+		if (!this.previousNodeInPath) return 0;
 		return this.previousNodeInPath?.getDepthInTree(currentCount) + 1;
 	}
 }
