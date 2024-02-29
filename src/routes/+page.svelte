@@ -254,6 +254,7 @@
 		goalNode = gridContent[x][y];
 	}
 	function doAlgorithmStep(): boolean {
+		if (pathCompleted) return true;
 		closedSet = new Set<GridNode>([...closedSet, currentNode]);
 		openSet = new Set<GridNode>([...openSet].filter((x) => !closedSet.has(x)));
 
@@ -371,13 +372,20 @@
 <button
 	on:click={() => {
 		if (pathCompleted) return;
-		if (algorithmIntervalID === null) algorithmIntervalID = setInterval(doAlgorithmStep, 0);
+		if (algorithmIntervalID === null) algorithmIntervalID = setInterval(doAlgorithmStep, 50);
 		else {
 			clearInterval(algorithmIntervalID);
 			algorithmIntervalID = null;
 		}
-	}}>Do next step</button
+	}}
 >
+	{#if algorithmIntervalID === null}
+		<i class="fa-solid fa-play"></i>
+	{:else}
+		<i class="fa-solid fa-pause"></i>
+	{/if}
+</button>
+<button on:click={doAlgorithmStep}> Step </button>
 
 <style lang="scss">
 	.mainCanvas {
