@@ -18,14 +18,20 @@
 	let gridContent: GridNode[][] = new Array(gridHeight)
 		.fill(null)
 		.map(() => new Array(gridWidth).fill(null)); // 2d array filled with null
-	let goalNode: { x: number; y: number };
-	let startNode: { x: number; y: number };
-	let currentNode: { x: number; y: number };
-	let openSet: GridNode[] = [];
+	let goalNode: GridNode;
+	let startNode: GridNode;
+	let currentNode: GridNode;
+	let openSet: Set<GridNode> = new Set<GridNode>();
+	let closedSet: Set<GridNode> = new Set<GridNode>();
+
+	// running information
+	let algorithmIntervalID: number | null = null;
+	let pathCompleted: boolean = false;
 
 	// display flags
 	let overlays = {
-		heuristicOverlay: false
+		heuristicOverlay: false,
+		setsOverlay: true
 	};
 
 	onMount(() => {
@@ -45,27 +51,17 @@
 		const resizeObserver = new ResizeObserver(() => resizeCanvas());
 		resizeObserver.observe(container);
 
-		debugDisplayTable();
+		getNeighbors(currentNode).forEach((node: GridNode) => {
+			defineNodeScore(node);
+		});
+
+		// debugDisplayTable();
+
+		// doAlgorithmStep();
 
 		return () => {
 			resizeObserver.disconnect(); // Clean up the observer on component destroy
 		};
-	}
-	function debugDisplayTable() {
-		const numRows = gridContent.length;
-		const numCols = gridContent[0].length;
-		let tableContent = [];
-
-		for (let col = 0; col < numCols; col++) {
-			let rowObject = {};
-			for (let row = 0; row < numRows; row++) {
-				let rowObject: { [key: string]: any } = {};
-				rowObject[`Row ${row}`] = calculateFScoreForNode(gridContent[row][col]);
-			}
-			tableContent.push(rowObject);
-		}
-
-		console.table(tableContent);
 	}
 	function twoDimensionalMap(callBack: (element: GridNode) => GridNode | void) {
 		gridContent.forEach((column) => {
@@ -77,12 +73,16 @@
 	}
 	function displayHeuristicOverlay() {
 		displayOverlay((node: GridNode) => {
-			const fScore = calculateFScoreForNode(node);
-			return scaleToBlackBodyHex(fScore);
+			return scaleToBlackBodyHex(getNodeScore(node).f);
 		});
 	}
+	function displaySetOverlay(node: GridNode): string {
+		if (openSet.has(node)) return '#ff0000';
+		if (closedSet.has(node)) return '#0000ff';
+		else return '';
+	}
 	function toggleOverlay(overlay: keyof typeof overlays) {
-		overlays.heuristicOverlay = !overlays.heuristicOverlay;
+		overlays[overlay] = !overlays[overlay];
 		refreshCanvas();
 	}
 	function displayOverlay(
@@ -90,6 +90,7 @@
 	) {
 		twoDimensionalMap((element: GridNode) => {
 			const result = callBack(element);
+			if (result === '') return;
 			let colorString;
 			if (typeof result === 'string') {
 				colorString = result;
@@ -148,15 +149,18 @@
 		if (canvas !== undefined && ctx !== undefined) {
 			clearCanvas();
 
-			displayOverlays();
+			displayAllOverlays();
 			displayGridNodes();
 
 			drawGridLines();
 		}
 	}
-	function displayOverlays() {
+	function displayAllOverlays() {
 		if (overlays.heuristicOverlay) {
 			displayHeuristicOverlay();
+		}
+		if (overlays.setsOverlay) {
+			displayOverlay(displaySetOverlay);
 		}
 	}
 	function generateNodes() {
@@ -238,26 +242,112 @@
 	function placeRandomStartPosition() {
 		const x = Math.floor(Math.random() * gridWidth);
 		const y = Math.floor(Math.random() * gridHeight);
-		startNode = { x, y };
+		startNode = gridContent[x][y];
 		currentNode = startNode;
+		openSet.add(gridContent[x][y]);
 		gridContent[x][y] = new GridNode(x, y, { isStartingPoint: true });
 	}
 	function placeRandomObjectivePosition() {
 		const x = Math.floor(Math.random() * gridWidth);
 		const y = Math.floor(Math.random() * gridHeight);
-		goalNode = { x, y };
-		gridContent[x][y] = new GridNode(x, y, { isObjective: true });
+		gridContent[x][y].contents.isObjective = true;
+		goalNode = gridContent[x][y];
 	}
-	function doAlgorithmStep() {
-		openSet.forEach((node) => {
-			node.fScore = calculateFScoreForNode(node);
-		});
-	}
-	function calculateFScoreForNode(node: GridNode): number {
-		const gScore = node.getDepthInTree();
-		const hScore = node.distanceTo(startNode.x, startNode.y);
+	function doAlgorithmStep(): boolean {
+		closedSet = new Set<GridNode>([...closedSet, currentNode]);
+		openSet = new Set<GridNode>([...openSet].filter((x) => !closedSet.has(x)));
 
-		return gScore + hScore;
+		const neighbors = getNeighbors(currentNode);
+		neighbors.forEach((node) => {
+			if (!openSet.has(node)) {
+				defineNodeScore(node);
+				openSet.add(node);
+				node.previousNodeInPath = currentNode;
+			}
+		});
+		openSet.forEach((node) => {
+			if (checkIfGoalNode(node)) {
+				goalNode.previousNodeInPath = currentNode;
+				closedSet.add(goalNode);
+				doEnding(); // TODO
+			}
+			defineNodeScore(node);
+			if (closedSet.has(node) && node.gScore! > currentNode.gScore!) {
+				node.previousNodeInPath = currentNode;
+			}
+		});
+
+		currentNode = Array.from(openSet).reduce((prev, curr) =>
+			prev.fScore! < curr.fScore! ? prev : curr
+		);
+
+		// currentNode = neighbors.reduce((prev, curr) => (prev.fScore! < curr.fScore! ? prev : curr));
+
+		if (openSet.size === 0) throw new Error('Open set empty!');
+		refreshCanvas();
+		return false;
+	}
+	function checkIfGoalNode(node: GridNode) {
+		return node.xPos === goalNode.xPos && node.yPos === goalNode.yPos;
+	}
+	function doEnding() {
+		pathCompleted = true;
+		clearInterval(algorithmIntervalID!);
+
+		console.log('done!');
+
+		console.log(goalNode.getPathToHere());
+		return true;
+	}
+	function defineNodeScore(node: GridNode) {
+		if (!node || !goalNode) {
+			console.error('Node or goalNode is undefined.');
+			return;
+		}
+		node.gScore = node.getDepthInTree();
+		node.hScore = node.distanceTo(goalNode.xPos, goalNode.yPos);
+		node.fScore = node.gScore + node.hScore;
+	}
+	function getNodeScore(node: GridNode): { g: number; h: number; f: number } {
+		const gScore = node.getDepthInTree();
+		const hScore = node.distanceTo(goalNode.xPos, goalNode.yPos);
+		const fScore = gScore + hScore;
+		return { g: gScore, h: hScore, f: fScore };
+	}
+	function getNeighbors(
+		node: GridNode,
+		includeUnWalkables: boolean = false,
+		includeCheckedNeighbors = false
+	): GridNode[] {
+		const { x, y } = { x: node.xPos, y: node.yPos };
+		if (!isWithinRange({ x, y })) throw new Error(`Position out of range: ${x},${y}`);
+		let neighborPositions: { x: number; y: number }[] = [
+			{ x: x - 1, y: y }, // left
+			{ x: x, y: y - 1 }, // up
+			{ x: x + 1, y: y }, // right
+			{ x: x, y: y + 1 } // down
+		];
+		neighborPositions = neighborPositions.filter(isWithinRange);
+
+		if (!includeCheckedNeighbors)
+			neighborPositions = neighborPositions.filter((element) => {
+				return !closedSet.has(gridContent[element.x][element.y]);
+			});
+		if (!includeUnWalkables)
+			neighborPositions = neighborPositions.filter(
+				({ x, y }) => !gridContent[x][y].contents.isWalkable
+			);
+
+		const neighborNodes = neighborPositions.map((node) => {
+			return gridContent[node.x][node.y];
+		});
+		return neighborNodes;
+	}
+	function isWithinRange(position: { x: number; y: number }): boolean {
+		const { x, y } = position;
+		if (x < 0 || x > gridWidth - 1) return false;
+		if (y < 0 || y > gridHeight - 1) return false;
+		return true;
 	}
 
 	$: if (canvasHeight || canvasWidth) {
@@ -274,6 +364,19 @@
 <button on:click={() => window.location.reload()}>Reload</button>
 <button on:click={() => toggleOverlay('heuristicOverlay')}
 	>Heuristic overlay {overlays.heuristicOverlay ? 'ON' : 'OFF'}</button
+>
+<button on:click={() => toggleOverlay('setsOverlay')}
+	>Sets overlay {overlays.setsOverlay ? 'ON' : 'OFF'}</button
+>
+<button
+	on:click={() => {
+		if (pathCompleted) return;
+		if (algorithmIntervalID === null) algorithmIntervalID = setInterval(doAlgorithmStep, 0);
+		else {
+			clearInterval(algorithmIntervalID);
+			algorithmIntervalID = null;
+		}
+	}}>Do next step</button
 >
 
 <style lang="scss">

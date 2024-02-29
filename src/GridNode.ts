@@ -2,6 +2,8 @@ export class GridNode {
 	xPos: number;
 	yPos: number;
 	fScore: number | undefined;
+	hScore: number | undefined;
+	gScore: number | undefined;
 	previousNodeInPath: GridNode | undefined;
 	nextNodeInPath: GridNode | undefined;
 	contents: {
@@ -35,7 +37,14 @@ export class GridNode {
 		this.nextNodeInPath = next;
 	}
 	getDepthInTree(currentCount: number = 0): number {
-        if(!this.previousNodeInPath) return 0;
+		if (!this.previousNodeInPath) return 0;
 		return this.previousNodeInPath?.getDepthInTree(currentCount) + 1;
+	}
+	getPathToHere(): GridNode[] {
+		if (this.previousNodeInPath !== undefined) {
+			return [...this.previousNodeInPath.getPathToHere(), this];
+		} else {
+			return [this];
+		}
 	}
 }
