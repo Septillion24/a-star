@@ -359,6 +359,8 @@
 	}
 </script>
 
+<a href="https://github.com/Septillion24/a-star"><i class="fa-brands fa-github githubIcon"></i></a>
+
 <div class="canvasContainer" style="width: {canvasWidth}px; height: {canvasHeight}px;">
 	<canvas bind:this={canvas} height={canvasHeight} width={canvasWidth} class="mainCanvas"></canvas>
 </div>
@@ -388,6 +390,10 @@
 <button on:click={doAlgorithmStep}> Step </button>
 
 <style lang="scss">
+    .githubIcon{
+        font-size: 25pt;
+        color:black;
+    }
 	.mainCanvas {
 		background-color: white;
 	}
