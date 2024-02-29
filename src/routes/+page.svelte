@@ -24,6 +24,10 @@
 	let openSet: Set<GridNode> = new Set<GridNode>();
 	let closedSet: Set<GridNode> = new Set<GridNode>();
 
+	// running information
+	let algorithmIntervalID: number | null = null;
+	let pathCompleted: boolean = false;
+
 	// display flags
 	let overlays = {
 		heuristicOverlay: false,
@@ -246,36 +250,54 @@
 	function placeRandomObjectivePosition() {
 		const x = Math.floor(Math.random() * gridWidth);
 		const y = Math.floor(Math.random() * gridHeight);
+		gridContent[x][y].contents.isObjective = true;
 		goalNode = gridContent[x][y];
-		gridContent[x][y] = new GridNode(x, y, { isObjective: true });
 	}
 	function doAlgorithmStep(): boolean {
 		closedSet = new Set<GridNode>([...closedSet, currentNode]);
 		openSet = new Set<GridNode>([...openSet].filter((x) => !closedSet.has(x)));
-		console.log(openSet);
 
 		const neighbors = getNeighbors(currentNode);
-		neighbors.forEach((node: GridNode) => {
-			checkIfGoalNode(node);
-			defineNodeScore(node);
-			if (closedSet.has(node) && node.gScore! > currentNode.gScore!) {
-				node.previousNodeInPath = currentNode;
-			}
+		neighbors.forEach((node) => {
 			if (!openSet.has(node)) {
 				defineNodeScore(node);
 				openSet.add(node);
 				node.previousNodeInPath = currentNode;
 			}
 		});
+		openSet.forEach((node) => {
+			if (checkIfGoalNode(node)) {
+				goalNode.previousNodeInPath = currentNode;
+				closedSet.add(goalNode);
+				doEnding(); // TODO
+			}
+			defineNodeScore(node);
+			if (closedSet.has(node) && node.gScore! > currentNode.gScore!) {
+				node.previousNodeInPath = currentNode;
+			}
+		});
 
-		currentNode = neighbors.reduce((prev, curr) => (prev.fScore! < curr.fScore! ? prev : curr));
+		currentNode = Array.from(openSet).reduce((prev, curr) =>
+			prev.fScore! < curr.fScore! ? prev : curr
+		);
+
+		// currentNode = neighbors.reduce((prev, curr) => (prev.fScore! < curr.fScore! ? prev : curr));
 
 		if (openSet.size === 0) throw new Error('Open set empty!');
 		refreshCanvas();
 		return false;
 	}
 	function checkIfGoalNode(node: GridNode) {
-		return false;
+		return node.xPos === goalNode.xPos && node.yPos === goalNode.yPos;
+	}
+	function doEnding() {
+		pathCompleted = true;
+		clearInterval(algorithmIntervalID!);
+
+		console.log('done!');
+
+		console.log(goalNode.getPathToHere());
+		return true;
 	}
 	function defineNodeScore(node: GridNode) {
 		if (!node || !goalNode) {
@@ -348,7 +370,12 @@
 >
 <button
 	on:click={() => {
-		doAlgorithmStep();
+		if (pathCompleted) return;
+		if (algorithmIntervalID === null) algorithmIntervalID = setInterval(doAlgorithmStep, 0);
+		else {
+			clearInterval(algorithmIntervalID);
+			algorithmIntervalID = null;
+		}
 	}}>Do next step</button
 >
 
