@@ -6,13 +6,14 @@
 	let canvas: HTMLCanvasElement;
 	let container: HTMLDivElement;
 	let ctx: CanvasRenderingContext2D;
+	let tooltipDiv: HTMLDivElement;
 
 	// canvas information
 	let canvasHeight: number = 700;
 	let canvasWidth: number = 700;
 	let gridHeight: number = 15;
 	let gridWidth: number = 15;
-	let unWalkableChance = 0.1;
+	let unWalkableChance: number = 0.1;
 
 	// node data
 	let gridContent: GridNode[][] = new Array(gridHeight)
@@ -27,6 +28,11 @@
 	// running information
 	let algorithmIntervalID: number | null = null;
 	let pathCompleted: boolean = false;
+
+	// rendering information
+	let tooltipIsVisible: boolean = false;
+	let tooltipContent: GridNode | null;
+	let tooltipPosition: { x: number; y: number } = { x: 0, y: 0 };
 
 	// display flags
 	let overlays = {
@@ -350,6 +356,25 @@
 		if (y < 0 || y > gridHeight - 1) return false;
 		return true;
 	}
+	function getGridSquare(gridX: number, gridY: number): GridNode {
+		return gridContent[gridX][gridY];
+	}
+	function getGridSquareAbsolute(absoluteX: number, absoluteY: number): GridNode {
+		const gridY = Math.floor(absoluteY / (canvasHeight / gridHeight));
+		const gridX = Math.floor(absoluteX / (canvasWidth / gridWidth));
+		return gridContent[gridX][gridY];
+	}
+	function manageCanvasClick(event: MouseEvent): void {
+		const rect = canvas.getBoundingClientRect();
+		const relativeX = event.clientX - rect.left;
+		const relativeY = event.clientY - rect.top;
+		const gridSquare = getGridSquareAbsolute(relativeX, relativeY);
+		tooltipIsVisible = true;
+		tooltipContent = gridSquare;
+
+		tooltipPosition = { x: event.clientX, y: event.clientY };
+		console.log(gridSquare);
+	}
 
 	$: if (canvasHeight || canvasWidth) {
 		if (typeof window !== 'undefined') {
@@ -362,7 +387,13 @@
 <a href="https://github.com/Septillion24/a-star"><i class="fa-brands fa-github githubIcon"></i></a>
 
 <div class="canvasContainer" style="width: {canvasWidth}px; height: {canvasHeight}px;">
-	<canvas bind:this={canvas} height={canvasHeight} width={canvasWidth} class="mainCanvas"></canvas>
+	<canvas
+		bind:this={canvas}
+		height={canvasHeight}
+		width={canvasWidth}
+		class="mainCanvas"
+		on:click={manageCanvasClick}
+	></canvas>
 </div>
 <button on:click={() => window.location.reload()}>Reload</button>
 <button on:click={() => toggleOverlay('heuristicOverlay')}
@@ -389,11 +420,30 @@
 </button>
 <button on:click={doAlgorithmStep}> Step </button>
 
+{#if tooltipIsVisible && tooltipContent !== null}
+	<div
+		class="tooltip"
+		bind:this={tooltipDiv}
+		style={`position:absolute; top: ${tooltipPosition.y}px;left:${tooltipPosition.x}px`}
+	>
+		<svg width="200" height="200">
+			<polygon style="fill:red" points="100 0, 100 100, 15 100, 15 20, 0 0, 14 0" />
+            <text x="15"y="15">({tooltipContent.xPos}, {tooltipContent.yPos})</text>
+		</svg>
+		
+	</div>
+{/if}
+
 <style lang="scss">
-    .githubIcon{
-        font-size: 25pt;
-        color:black;
-    }
+	.tooltip {
+		color: black;
+		position: absolute;
+		// clip-path: polygon(100% 0, 100% 100%, 15% 100%, 15% 20%, 0 0, 14% 0);
+	}
+	.githubIcon {
+		font-size: 25pt;
+		color: black;
+	}
 	.mainCanvas {
 		background-color: white;
 	}
