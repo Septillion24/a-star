@@ -6,13 +6,14 @@
 	let canvas: HTMLCanvasElement;
 	let container: HTMLDivElement;
 	let ctx: CanvasRenderingContext2D;
+	let tooltipDiv: HTMLDivElement;
 
 	// canvas information
 	let canvasHeight: number = 700;
 	let canvasWidth: number = 700;
 	let gridHeight: number = 15;
 	let gridWidth: number = 15;
-	let unWalkableChance = 0.1;
+	let unWalkableChance: number = 0.1;
 
 	// node data
 	let gridContent: GridNode[][] = new Array(gridHeight)
@@ -28,6 +29,11 @@
 	let algorithmIntervalID: number | null = null;
 	let pathCompleted: boolean = false;
 
+	// rendering information
+	let tooltipIsVisible: boolean = false;
+	let tooltipContent: GridNode | null;
+	let tooltipPosition: { x: number; y: number } = { x: 0, y: 0 };
+
 	// display flags
 	let overlays = {
 		heuristicOverlay: false,
@@ -35,9 +41,14 @@
 	};
 
 	onMount(() => {
+		window.addEventListener('click', handleClick);
 		handleSetup();
 	});
-
+	function handleClick(event: MouseEvent) {
+		if (canvas && !canvas.contains(event.target as Node)) {
+            tooltipIsVisible = false;
+		}
+	}
 	function handleSetup() {
 		ctx = canvas.getContext('2d')!;
 		container = canvas.parentNode as HTMLDivElement;
@@ -270,6 +281,7 @@
 			if (checkIfGoalNode(node)) {
 				goalNode.previousNodeInPath = currentNode;
 				closedSet.add(goalNode);
+                openSet = new Set<GridNode>([...openSet].filter((x) => x !== goalNode));
 				doEnding(); // TODO
 			}
 			defineNodeScore(node);
@@ -281,8 +293,6 @@
 		currentNode = Array.from(openSet).reduce((prev, curr) =>
 			prev.fScore! < curr.fScore! ? prev : curr
 		);
-
-		// currentNode = neighbors.reduce((prev, curr) => (prev.fScore! < curr.fScore! ? prev : curr));
 
 		if (openSet.size === 0) throw new Error('Open set empty!');
 		refreshCanvas();
@@ -350,7 +360,33 @@
 		if (y < 0 || y > gridHeight - 1) return false;
 		return true;
 	}
+	function getGridSquare(gridX: number, gridY: number): GridNode {
+		return gridContent[gridX][gridY];
+	}
+	function getGridSquareAbsolute(absoluteX: number, absoluteY: number): GridNode {
+		const gridY = Math.floor(absoluteY / (canvasHeight / gridHeight));
+		const gridX = Math.floor(absoluteX / (canvasWidth / gridWidth));
+		return gridContent[gridX][gridY];
+	}
+	function placeTooltipBoxAt(gridSquare: GridNode) {
+		const x = gridSquare.xPos;
+		const y = gridSquare.yPos;
 
+		const absoluteX = (x + 1) * (canvasWidth / gridWidth);
+		const absoluteY = (y + 0.5) * (canvasHeight / gridHeight);
+
+		tooltipIsVisible = true;
+		tooltipContent = gridSquare;
+		tooltipPosition = { x: absoluteX, y: absoluteY };
+	}
+	function manageCanvasClick(event: MouseEvent): void {
+		const rect = canvas.getBoundingClientRect();
+		const relativeX = event.clientX - rect.left;
+		const relativeY = event.clientY - rect.top;
+		const gridSquare = getGridSquareAbsolute(relativeX, relativeY);
+
+		placeTooltipBoxAt(gridSquare);
+	}
 	$: if (canvasHeight || canvasWidth) {
 		if (typeof window !== 'undefined') {
 			// browser-only
@@ -362,7 +398,49 @@
 <a href="https://github.com/Septillion24/a-star"><i class="fa-brands fa-github githubIcon"></i></a>
 
 <div class="canvasContainer" style="width: {canvasWidth}px; height: {canvasHeight}px;">
-	<canvas bind:this={canvas} height={canvasHeight} width={canvasWidth} class="mainCanvas"></canvas>
+	<canvas
+		bind:this={canvas}
+		height={canvasHeight}
+		width={canvasWidth}
+		class="mainCanvas"
+		on:click={manageCanvasClick}
+	></canvas>
+	{#if tooltipIsVisible && tooltipContent !== null}
+		<div
+			class="tooltip"
+			bind:this={tooltipDiv}
+			style={`position:absolute; top: ${tooltipPosition.y}px;left:${tooltipPosition.x}px`}
+		>
+			<svg width="200" height="200">
+				<polygon
+					style="fill:white;stroke:black;stroke-width:1"
+					points="200 0, 200 200, 15 200, 15 20, 0 0, 14 0"
+				/>
+				<text x="20" y="20">({tooltipContent.xPos}, {tooltipContent.yPos})</text>
+				<text x="20" y="40"
+					>Is goal: <tspan class={tooltipContent.contents.isObjective ? 'tspanTrue' : 'tspanFalse'}
+						>{tooltipContent.contents.isObjective}</tspan
+					></text
+				>
+				<text x="20" y="60"
+					>Is start: <tspan
+						class={tooltipContent.contents.isStartingPoint ? 'tspanTrue' : 'tspanFalse'}
+						>{tooltipContent.contents.isStartingPoint}</tspan
+					></text
+				>
+				<text x="20" y="80"
+					>Is walkable: <tspan
+						class={!tooltipContent.contents.isWalkable ? 'tspanTrue' : 'tspanFalse'}
+						>{!tooltipContent.contents.isWalkable}</tspan
+					></text
+				>
+				<text x="20" y="100"
+					>Part of set: {closedSet.has(tooltipContent) ? 'Closed set ' : ''}
+					{openSet.has(tooltipContent) ? 'Open set ' : ''}</text
+				>
+			</svg>
+		</div>
+	{/if}
 </div>
 <button on:click={() => window.location.reload()}>Reload</button>
 <button on:click={() => toggleOverlay('heuristicOverlay')}
@@ -390,18 +468,33 @@
 <button on:click={doAlgorithmStep}> Step </button>
 
 <style lang="scss">
-    .githubIcon{
-        font-size: 25pt;
-        color:black;
-    }
+	.tooltip {
+		color: black;
+		position: absolute;
+		// clip-path: polygon(100% 0, 100% 100%, 15% 100%, 15% 20%, 0 0, 14% 0);
+	}
+	.githubIcon {
+		font-size: 25pt;
+		color: black;
+	}
 	.mainCanvas {
 		background-color: white;
 	}
 	.canvasContainer {
 		box-shadow: 0.2vmin 0.2vmin 0.5vmin black;
 		resize: both;
-		overflow: hidden;
+		// overflow: hidden;
+		position: relative;
 	}
+	.tspanTrue {
+		fill: green;
+		font-weight: bold;
+	}
+	.tspanFalse {
+		fill: red;
+		font-weight: bold;
+	}
+
 	:global(body) {
 		background-color: hsl(226, 17%, 55%);
 	}
