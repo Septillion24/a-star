@@ -492,6 +492,7 @@
 		display: grid;
 		grid-template-columns: auto 1fr;
 		column-gap: 1vmin;
+        row-gap: 1vmin;
 	}
 	.mainCanvas {
 		background-color: white;
