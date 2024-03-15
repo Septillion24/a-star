@@ -396,6 +396,7 @@
     }
 	.mainCanvas {
 		background-color: white;
+        cursor: pointer;
 	}
 	.canvasContainer {
 		box-shadow: 0.2vmin 0.2vmin 0.5vmin black;
