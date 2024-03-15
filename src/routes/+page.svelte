@@ -41,9 +41,15 @@
 	};
 
 	onMount(() => {
+		window.addEventListener('click', handleClick);
 		handleSetup();
 	});
-
+	function handleClick(event: MouseEvent) {
+		if (canvas && !canvas.contains(event.target as Node)) {
+			console.log('Clicked outside the specific div');
+            tooltipIsVisible = false;
+		}
+	}
 	function handleSetup() {
 		ctx = canvas.getContext('2d')!;
 		container = canvas.parentNode as HTMLDivElement;
@@ -364,18 +370,25 @@
 		const gridX = Math.floor(absoluteX / (canvasWidth / gridWidth));
 		return gridContent[gridX][gridY];
 	}
+	function placeTooltipBoxAt(gridSquare: GridNode) {
+		const x = gridSquare.xPos;
+		const y = gridSquare.yPos;
+
+		const absoluteX = (x + 1) * (canvasWidth / gridWidth);
+		const absoluteY = (y + 0.5) * (canvasHeight / gridHeight);
+
+		tooltipIsVisible = true;
+		tooltipContent = gridSquare;
+		tooltipPosition = { x: absoluteX, y: absoluteY };
+	}
 	function manageCanvasClick(event: MouseEvent): void {
 		const rect = canvas.getBoundingClientRect();
 		const relativeX = event.clientX - rect.left;
 		const relativeY = event.clientY - rect.top;
 		const gridSquare = getGridSquareAbsolute(relativeX, relativeY);
-		tooltipIsVisible = true;
-		tooltipContent = gridSquare;
 
-		tooltipPosition = { x: event.clientX, y: event.clientY };
-		console.log(gridSquare);
+		placeTooltipBoxAt(gridSquare);
 	}
-
 	$: if (canvasHeight || canvasWidth) {
 		if (typeof window !== 'undefined') {
 			// browser-only
@@ -394,6 +407,42 @@
 		class="mainCanvas"
 		on:click={manageCanvasClick}
 	></canvas>
+	{#if tooltipIsVisible && tooltipContent !== null}
+		<div
+			class="tooltip"
+			bind:this={tooltipDiv}
+			style={`position:absolute; top: ${tooltipPosition.y}px;left:${tooltipPosition.x}px`}
+		>
+			<svg width="200" height="200">
+				<polygon
+					style="fill:white;stroke:black;stroke-width:1"
+					points="200 0, 200 200, 15 200, 15 20, 0 0, 14 0"
+				/>
+				<text x="20" y="20">({tooltipContent.xPos}, {tooltipContent.yPos})</text>
+				<text x="20" y="40"
+					>Is goal: <tspan class={tooltipContent.contents.isObjective ? 'tspanTrue' : 'tspanFalse'}
+						>{tooltipContent.contents.isObjective}</tspan
+					></text
+				>
+				<text x="20" y="60"
+					>Is start: <tspan
+						class={tooltipContent.contents.isStartingPoint ? 'tspanTrue' : 'tspanFalse'}
+						>{tooltipContent.contents.isStartingPoint}</tspan
+					></text
+				>
+				<text x="20" y="80"
+					>Is walkable: <tspan
+						class={!tooltipContent.contents.isWalkable ? 'tspanTrue' : 'tspanFalse'}
+						>{!tooltipContent.contents.isWalkable}</tspan
+					></text
+				>
+				<text x="20" y="100"
+					>Part of sets: {closedSet.has(tooltipContent) ? 'Closed set' : ''}
+					{openSet.has(tooltipContent) ? 'Open set' : ''}</text
+				>
+			</svg>
+		</div>
+	{/if}
 </div>
 <button on:click={() => window.location.reload()}>Reload</button>
 <button on:click={() => toggleOverlay('heuristicOverlay')}
@@ -420,20 +469,6 @@
 </button>
 <button on:click={doAlgorithmStep}> Step </button>
 
-{#if tooltipIsVisible && tooltipContent !== null}
-	<div
-		class="tooltip"
-		bind:this={tooltipDiv}
-		style={`position:absolute; top: ${tooltipPosition.y}px;left:${tooltipPosition.x}px`}
-	>
-		<svg width="200" height="200">
-			<polygon style="fill:red" points="100 0, 100 100, 15 100, 15 20, 0 0, 14 0" />
-            <text x="15"y="15">({tooltipContent.xPos}, {tooltipContent.yPos})</text>
-		</svg>
-		
-	</div>
-{/if}
-
 <style lang="scss">
 	.tooltip {
 		color: black;
@@ -450,8 +485,18 @@
 	.canvasContainer {
 		box-shadow: 0.2vmin 0.2vmin 0.5vmin black;
 		resize: both;
-		overflow: hidden;
+		// overflow: hidden;
+		position: relative;
 	}
+	.tspanTrue {
+		fill: green;
+		font-weight: bold;
+	}
+	.tspanFalse {
+		fill: red;
+		font-weight: bold;
+	}
+
 	:global(body) {
 		background-color: hsl(226, 17%, 55%);
 	}
