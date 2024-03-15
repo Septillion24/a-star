@@ -282,6 +282,7 @@
 			if (checkIfGoalNode(node)) {
 				goalNode.previousNodeInPath = currentNode;
 				closedSet.add(goalNode);
+                openSet = new Set<GridNode>([...openSet].filter((x) => x !== goalNode));
 				doEnding(); // TODO
 			}
 			defineNodeScore(node);
