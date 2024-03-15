@@ -398,48 +398,49 @@
 <div class="mainContainer">
 	<div class="canvasContainer" style="width: {canvasWidth}px; height: {canvasHeight}px;">
 		<canvas
-		bind:this={canvas}
-		height={canvasHeight}
-		width={canvasWidth}
-		class="mainCanvas"
-		on:click={manageCanvasClick}
-	></canvas>
-	{#if tooltipIsVisible && tooltipContent !== null}
-		<div
-			class="tooltip"
-			bind:this={tooltipDiv}
-			style={`position:absolute; top: ${tooltipPosition.y}px;left:${tooltipPosition.x}px`}
-		>
-			<svg width="200" height="200">
-				<polygon
-					style="fill:white;stroke:black;stroke-width:1"
-					points="200 0, 200 200, 15 200, 15 20, 0 0, 14 0"
-				/>
-				<text x="20" y="20">({tooltipContent.xPos}, {tooltipContent.yPos})</text>
-				<text x="20" y="40"
-					>Is goal: <tspan class={tooltipContent.contents.isObjective ? 'tspanTrue' : 'tspanFalse'}
-						>{tooltipContent.contents.isObjective}</tspan
-					></text
-				>
-				<text x="20" y="60"
-					>Is start: <tspan
-						class={tooltipContent.contents.isStartingPoint ? 'tspanTrue' : 'tspanFalse'}
-						>{tooltipContent.contents.isStartingPoint}</tspan
-					></text
-				>
-				<text x="20" y="80"
-					>Is walkable: <tspan
-						class={!tooltipContent.contents.isWalkable ? 'tspanTrue' : 'tspanFalse'}
-						>{!tooltipContent.contents.isWalkable}</tspan
-					></text
-				>
-				<text x="20" y="100"
-					>Part of set: {closedSet.has(tooltipContent) ? 'Closed set ' : ''}
-					{openSet.has(tooltipContent) ? 'Open set ' : ''}</text
-				>
-			</svg>
-		</div>
-	{/if}
+			bind:this={canvas}
+			height={canvasHeight}
+			width={canvasWidth}
+			class="mainCanvas"
+			on:click={manageCanvasClick}
+		></canvas>
+		{#if tooltipIsVisible && tooltipContent !== null}
+			<div
+				class="tooltip"
+				bind:this={tooltipDiv}
+				style={`position:absolute; top: ${tooltipPosition.y}px;left:${tooltipPosition.x}px`}
+			>
+				<svg width="200" height="200">
+					<polygon
+						style="fill:white;stroke:black;stroke-width:1"
+						points="200 0, 200 200, 15 200, 15 20, 0 0, 14 0"
+					/>
+					<text x="20" y="20">({tooltipContent.xPos}, {tooltipContent.yPos})</text>
+					<text x="20" y="40"
+						>Is goal: <tspan
+							class={tooltipContent.contents.isObjective ? 'tspanTrue' : 'tspanFalse'}
+							>{tooltipContent.contents.isObjective}</tspan
+						></text
+					>
+					<text x="20" y="60"
+						>Is start: <tspan
+							class={tooltipContent.contents.isStartingPoint ? 'tspanTrue' : 'tspanFalse'}
+							>{tooltipContent.contents.isStartingPoint}</tspan
+						></text
+					>
+					<text x="20" y="80"
+						>Is walkable: <tspan
+							class={!tooltipContent.contents.isWalkable ? 'tspanTrue' : 'tspanFalse'}
+							>{!tooltipContent.contents.isWalkable}</tspan
+						></text
+					>
+					<text x="20" y="100"
+						>Part of set: {closedSet.has(tooltipContent) ? 'Closed set ' : ''}
+						{openSet.has(tooltipContent) ? 'Open set ' : ''}</text
+					>
+				</svg>
+			</div>
+		{/if}
 	</div>
 	<div style="align-self: end;">
 		<a href="https://www.linkedin.com/in/noah-grosh-164769249/" target="_blank">
