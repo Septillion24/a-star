@@ -44,11 +44,7 @@
 		window.addEventListener('click', handleClick);
 		handleSetup();
 	});
-	function handleClick(event: MouseEvent) {
-		if (canvas && !canvas.contains(event.target as Node)) {
-            tooltipIsVisible = false;
-		}
-	}
+
 	function handleSetup() {
 		ctx = canvas.getContext('2d')!;
 		container = canvas.parentNode as HTMLDivElement;
@@ -281,7 +277,6 @@
 			if (checkIfGoalNode(node)) {
 				goalNode.previousNodeInPath = currentNode;
 				closedSet.add(goalNode);
-                openSet = new Set<GridNode>([...openSet].filter((x) => x !== goalNode));
 				doEnding(); // TODO
 			}
 			defineNodeScore(node);
@@ -395,91 +390,60 @@
 	}
 </script>
 
-<a href="https://github.com/Septillion24/a-star"><i class="fa-brands fa-github githubIcon"></i></a>
-
-<div class="canvasContainer" style="width: {canvasWidth}px; height: {canvasHeight}px;">
-	<canvas
-		bind:this={canvas}
-		height={canvasHeight}
-		width={canvasWidth}
-		class="mainCanvas"
-		on:click={manageCanvasClick}
-	></canvas>
-	{#if tooltipIsVisible && tooltipContent !== null}
-		<div
-			class="tooltip"
-			bind:this={tooltipDiv}
-			style={`position:absolute; top: ${tooltipPosition.y}px;left:${tooltipPosition.x}px`}
+<div class="mainContainer">
+	<div class="canvasContainer" style="width: {canvasWidth}px; height: {canvasHeight}px;">
+		<canvas bind:this={canvas} height={canvasHeight} width={canvasWidth} class="mainCanvas"
+		></canvas>
+	</div>
+	<div style="align-self: end;">
+		<a href="https://www.linkedin.com/in/noah-grosh-164769249/" target="_blank">
+			<i class="fa-brands fa-linkedin socialIcon"></i>
+		</a><br />
+		<a href="https://github.com/Septillion24/a-star" target="_blank">
+			<i class="fa-brands fa-github socialIcon"></i>
+		</a><br />
+	</div>
+	<div>
+		<button on:click={() => window.location.reload()}>Reload</button>
+		<button on:click={() => toggleOverlay('heuristicOverlay')}
+			>Heuristic overlay {overlays.heuristicOverlay ? 'ON' : 'OFF'}</button
 		>
-			<svg width="200" height="200">
-				<polygon
-					style="fill:white;stroke:black;stroke-width:1"
-					points="200 0, 200 200, 15 200, 15 20, 0 0, 14 0"
-				/>
-				<text x="20" y="20">({tooltipContent.xPos}, {tooltipContent.yPos})</text>
-				<text x="20" y="40"
-					>Is goal: <tspan class={tooltipContent.contents.isObjective ? 'tspanTrue' : 'tspanFalse'}
-						>{tooltipContent.contents.isObjective}</tspan
-					></text
-				>
-				<text x="20" y="60"
-					>Is start: <tspan
-						class={tooltipContent.contents.isStartingPoint ? 'tspanTrue' : 'tspanFalse'}
-						>{tooltipContent.contents.isStartingPoint}</tspan
-					></text
-				>
-				<text x="20" y="80"
-					>Is walkable: <tspan
-						class={!tooltipContent.contents.isWalkable ? 'tspanTrue' : 'tspanFalse'}
-						>{!tooltipContent.contents.isWalkable}</tspan
-					></text
-				>
-				<text x="20" y="100"
-					>Part of set: {closedSet.has(tooltipContent) ? 'Closed set ' : ''}
-					{openSet.has(tooltipContent) ? 'Open set ' : ''}</text
-				>
-			</svg>
-		</div>
-	{/if}
+		<button on:click={() => toggleOverlay('setsOverlay')}
+			>Sets overlay {overlays.setsOverlay ? 'ON' : 'OFF'}</button
+		>
+		<button
+			on:click={() => {
+				if (pathCompleted) return;
+				if (algorithmIntervalID === null) algorithmIntervalID = setInterval(doAlgorithmStep, 50);
+				else {
+					clearInterval(algorithmIntervalID);
+					algorithmIntervalID = null;
+				}
+			}}
+		>
+			{#if algorithmIntervalID === null}
+				<i class="fa-solid fa-play"></i>
+			{:else}
+				<i class="fa-solid fa-pause"></i>
+			{/if}
+		</button>
+		<button on:click={doAlgorithmStep}> Step </button>
+	</div>
 </div>
-<button on:click={() => window.location.reload()}>Reload</button>
-<button on:click={() => toggleOverlay('heuristicOverlay')}
-	>Heuristic overlay {overlays.heuristicOverlay ? 'ON' : 'OFF'}</button
->
-<button on:click={() => toggleOverlay('setsOverlay')}
-	>Sets overlay {overlays.setsOverlay ? 'ON' : 'OFF'}</button
->
-<button
-	on:click={() => {
-		if (pathCompleted) return;
-		if (algorithmIntervalID === null) algorithmIntervalID = setInterval(doAlgorithmStep, 50);
-		else {
-			clearInterval(algorithmIntervalID);
-			algorithmIntervalID = null;
-		}
-	}}
->
-	{#if algorithmIntervalID === null}
-		<i class="fa-solid fa-play"></i>
-	{:else}
-		<i class="fa-solid fa-pause"></i>
-	{/if}
-</button>
-<button on:click={doAlgorithmStep}> Step </button>
 
 <style lang="scss">
-	.tooltip {
+	.socialIcon {
+		font-size: 20pt;
 		color: black;
-		position: absolute;
-		// clip-path: polygon(100% 0, 100% 100%, 15% 100%, 15% 20%, 0 0, 14% 0);
 	}
-	.githubIcon {
-		font-size: 25pt;
-		color: black;
+	.mainContainer {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		column-gap: 1vmin;
 	}
 	.mainCanvas {
 		background-color: white;
-        cursor: pointer;
+		//cursor: pointer;
 	}
 	.canvasContainer {
 		box-shadow: 0.2vmin 0.2vmin 0.5vmin black;
