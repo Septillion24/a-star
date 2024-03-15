@@ -24,6 +24,7 @@
 	let currentNode: GridNode;
 	let openSet: Set<GridNode> = new Set<GridNode>();
 	let closedSet: Set<GridNode> = new Set<GridNode>();
+	let pathSet: Set<GridNode> = new Set<GridNode>();
 
 	// running information
 	let algorithmIntervalID: number | null = null;
@@ -90,6 +91,7 @@
 	}
 	function displaySetOverlay(node: GridNode): string {
 		if (openSet.has(node)) return '#ff0000';
+		if (pathSet.has(node)) return '#Faff00';
 		if (closedSet.has(node)) return '#0000ff';
 		else return '';
 	}
@@ -282,7 +284,7 @@
 			if (checkIfGoalNode(node)) {
 				goalNode.previousNodeInPath = currentNode;
 				closedSet.add(goalNode);
-                openSet = new Set<GridNode>([...openSet].filter((x) => x !== goalNode));
+				openSet = new Set<GridNode>([...openSet].filter((x) => x !== goalNode));
 				doEnding(); // TODO
 			}
 			defineNodeScore(node);
@@ -307,9 +309,8 @@
 		clearInterval(algorithmIntervalID!);
 
 		console.log('done!');
-
+		pathSet = new Set<GridNode>(goalNode.getPathToHere());
 		console.log(goalNode.getPathToHere());
-		return true;
 	}
 	function defineNodeScore(node: GridNode) {
 		if (!node || !goalNode) {
@@ -435,9 +436,15 @@
 							>{!tooltipContent.contents.isWalkable}</tspan
 						></text
 					>
-					<text x="20" y="100"
+					<text x="20" y="110"
+						>Part of path: <tspan class={pathSet.has(tooltipContent) ? 'tspanTrue' : 'tspanFalse'}
+							>{pathSet.has(tooltipContent)}</tspan
+						></text
+					>
+					<text x="20" y="130"
 						>Part of set: {closedSet.has(tooltipContent) ? 'Closed set ' : ''}
-						{openSet.has(tooltipContent) ? 'Open set ' : ''}</text
+						{openSet.has(tooltipContent) ? 'Open set ' : ''} 
+                        {!closedSet.has(tooltipContent) && !openSet.has(tooltipContent) ? 'None' : ''}</text
 					>
 				</svg>
 			</div>
@@ -492,7 +499,7 @@
 		display: grid;
 		grid-template-columns: auto 1fr;
 		column-gap: 1vmin;
-        row-gap: 1vmin;
+		row-gap: 1vmin;
 	}
 	.mainCanvas {
 		background-color: white;
