@@ -437,8 +437,8 @@
 					></text
 				>
 				<text x="20" y="100"
-					>Part of sets: {closedSet.has(tooltipContent) ? 'Closed set' : ''}
-					{openSet.has(tooltipContent) ? 'Open set' : ''}</text
+					>Part of set: {closedSet.has(tooltipContent) ? 'Closed set ' : ''}
+					{openSet.has(tooltipContent) ? 'Open set ' : ''}</text
 				>
 			</svg>
 		</div>
