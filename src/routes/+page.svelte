@@ -46,7 +46,6 @@
 	});
 	function handleClick(event: MouseEvent) {
 		if (canvas && !canvas.contains(event.target as Node)) {
-			console.log('Clicked outside the specific div');
             tooltipIsVisible = false;
 		}
 	}
@@ -294,8 +293,6 @@
 		currentNode = Array.from(openSet).reduce((prev, curr) =>
 			prev.fScore! < curr.fScore! ? prev : curr
 		);
-
-		// currentNode = neighbors.reduce((prev, curr) => (prev.fScore! < curr.fScore! ? prev : curr));
 
 		if (openSet.size === 0) throw new Error('Open set empty!');
 		refreshCanvas();
