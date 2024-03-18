@@ -34,6 +34,7 @@
 	let tooltipIsVisible: boolean = false;
 	let tooltipContent: GridNode | null;
 	let tooltipPosition: { x: number; y: number } = { x: 0, y: 0 };
+	let noPathFound: boolean = false;
 
 	// display flags
 	let overlays = {
@@ -270,6 +271,7 @@
 	}
 	function doAlgorithmStep(): boolean {
 		if (pathCompleted) return true;
+		if (noPathFound) return false;
 		closedSet = new Set<GridNode>([...closedSet, currentNode]);
 		openSet = new Set<GridNode>([...openSet].filter((x) => !closedSet.has(x)));
 
@@ -293,10 +295,16 @@
 				node.previousNodeInPath = currentNode;
 			}
 		});
-
-		currentNode = Array.from(openSet).reduce((prev, curr) =>
-			prev.fScore! < curr.fScore! ? prev : curr
-		);
+		try {
+			currentNode = Array.from(openSet).reduce((prev, curr) =>
+				prev.fScore! < curr.fScore! ? prev : curr
+			);
+		} catch {
+			noPathFound = true;
+			if (algorithmIntervalID) {
+				clearInterval(algorithmIntervalID);
+			}
+		}
 
 		if (openSet.size === 0) throw new Error('Open set empty!');
 		refreshCanvas();
@@ -444,8 +452,8 @@
 					>
 					<text x="20" y="130"
 						>Part of set: {closedSet.has(tooltipContent) ? 'Closed set ' : ''}
-						{openSet.has(tooltipContent) ? 'Open set ' : ''} 
-                        {!closedSet.has(tooltipContent) && !openSet.has(tooltipContent) ? 'None' : ''}</text
+						{openSet.has(tooltipContent) ? 'Open set ' : ''}
+						{!closedSet.has(tooltipContent) && !openSet.has(tooltipContent) ? 'None' : ''}</text
 					>
 				</svg>
 			</div>
@@ -469,7 +477,7 @@
 		>
 		<button
 			on:click={() => {
-				if (pathCompleted) return;
+				if (pathCompleted || noPathFound) return;
 				if (algorithmIntervalID === null) algorithmIntervalID = setInterval(doAlgorithmStep, 50);
 				else {
 					clearInterval(algorithmIntervalID);
@@ -486,6 +494,9 @@
 		<button on:click={doAlgorithmStep}> Step </button>
 	</div>
 </div>
+{#if noPathFound}
+	<p style="color:red">No path found!</p>
+{/if}
 
 <style lang="scss">
 	.socialIcon {
