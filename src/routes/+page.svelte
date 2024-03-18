@@ -265,6 +265,7 @@
 		const x = Math.floor(Math.random() * gridWidth);
 		const y = Math.floor(Math.random() * gridHeight);
 		gridContent[x][y].contents.isObjective = true;
+		gridContent[x][y].contents.isWalkable = false;
 		goalNode = gridContent[x][y];
 	}
 	function doAlgorithmStep(): boolean {
