@@ -29,6 +29,11 @@
 	// running information
 	let algorithmIntervalID: number | null = null;
 	let pathCompleted: boolean = false;
+	let nodePlacingStatus = {
+		isPlacing: false,
+		isPlacingGoal: false,
+		isPlacingStart: false
+	};
 
 	// rendering information
 	let tooltipIsVisible: boolean = false;
@@ -259,8 +264,7 @@
 		const y = Math.floor(Math.random() * gridHeight);
 		startNode = gridContent[x][y];
 		currentNode = startNode;
-		openSet.add(gridContent[x][y]);
-		gridContent[x][y] = new GridNode(x, y, { isStartingPoint: true });
+		gridContent[x][y].contents.isStartingPoint = true;
 	}
 	function placeRandomObjectivePosition() {
 		const x = Math.floor(Math.random() * gridWidth);
@@ -272,6 +276,12 @@
 	function doAlgorithmStep(): boolean {
 		if (pathCompleted) return true;
 		if (noPathFound) return false;
+
+		if (!openSet.has(startNode) && !closedSet.has(startNode)) {
+			openSet.add(startNode);
+			return false;
+		}
+
 		closedSet = new Set<GridNode>([...closedSet, currentNode]);
 		openSet = new Set<GridNode>([...openSet].filter((x) => !closedSet.has(x)));
 
@@ -395,8 +405,27 @@
 		const relativeX = event.clientX - rect.left;
 		const relativeY = event.clientY - rect.top;
 		const gridSquare = getGridSquareAbsolute(relativeX, relativeY);
-
-		placeTooltipBoxAt(gridSquare);
+		if (nodePlacingStatus.isPlacing) {
+			if (nodePlacingStatus.isPlacingGoal) {
+				goalNode.contents.isObjective = false;
+				gridSquare.contents.isObjective = true;
+				gridSquare.contents.isWalkable = false;
+				goalNode = gridSquare;
+				nodePlacingStatus.isPlacingGoal = false;
+			}
+			if (nodePlacingStatus.isPlacingStart) {
+				startNode.contents.isStartingPoint = false;
+				gridSquare.contents.isStartingPoint = true;
+				gridSquare.contents.isWalkable = false;
+				startNode = gridSquare;
+				currentNode = startNode;
+				nodePlacingStatus.isPlacingStart = false;
+			}
+			nodePlacingStatus.isPlacing = false;
+			refreshCanvas();
+		} else {
+			placeTooltipBoxAt(gridSquare);
+		}
 	}
 	$: if (canvasHeight || canvasWidth) {
 		if (typeof window !== 'undefined') {
@@ -491,11 +520,39 @@
 				<i class="fa-solid fa-pause"></i>
 			{/if}
 		</button>
+
 		<button on:click={doAlgorithmStep}> Step </button>
+		<button
+			on:click={() => {
+				if (nodePlacingStatus.isPlacingGoal) {
+					nodePlacingStatus.isPlacingGoal = false;
+					nodePlacingStatus.isPlacing = false;
+				}
+				nodePlacingStatus.isPlacing = !nodePlacingStatus.isPlacing;
+				nodePlacingStatus.isPlacingStart = !nodePlacingStatus.isPlacingStart;
+				nodePlacingStatus.isPlacingGoal = false;
+			}}>Relocate start node</button
+		>
+		<button
+			on:click={() => {
+				if (nodePlacingStatus.isPlacingStart) {
+					nodePlacingStatus.isPlacingStart = false;
+					nodePlacingStatus.isPlacing = false;
+				}
+				nodePlacingStatus.isPlacing = !nodePlacingStatus.isPlacing;
+				nodePlacingStatus.isPlacingGoal = !nodePlacingStatus.isPlacingGoal;
+			}}>Relocate goal node</button
+		>
 	</div>
 </div>
 {#if noPathFound}
 	<p style="color:red">No path found!</p>
+{/if}
+{#if nodePlacingStatus.isPlacingStart}
+	<p style="color:#58ff4d">Placing start node...</p>
+{/if}
+{#if nodePlacingStatus.isPlacingGoal}
+	<p style="color:#4dafff">Placing objective node...</p>
 {/if}
 
 <style lang="scss">
