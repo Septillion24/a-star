@@ -522,7 +522,7 @@
 		</button>
 
 		<button on:click={doAlgorithmStep}> Step </button>
-		<button class="{nodePlacingStatus.isPlacingGoal ? "activeButton" : ""}"
+		<button class="{nodePlacingStatus.isPlacingStart ? "activeButton" : ""}"
 			on:click={() => {
 				if (nodePlacingStatus.isPlacingGoal) {
 					nodePlacingStatus.isPlacingGoal = false;
@@ -533,7 +533,7 @@
 				nodePlacingStatus.isPlacingGoal = false;
 			}}>Relocate start node</button
 		>
-		<button class="{nodePlacingStatus.isPlacingStart ? "activeButton" : ""}"
+		<button class="{nodePlacingStatus.isPlacingGoal ? "activeButton" : ""}"
 			on:click={() => {
 				if (nodePlacingStatus.isPlacingStart) {
 					nodePlacingStatus.isPlacingStart = false;
