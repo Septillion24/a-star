@@ -522,7 +522,7 @@
 		</button>
 
 		<button on:click={doAlgorithmStep}> Step </button>
-		<button
+		<button class="{nodePlacingStatus.isPlacingGoal ? "activeButton" : ""}"
 			on:click={() => {
 				if (nodePlacingStatus.isPlacingGoal) {
 					nodePlacingStatus.isPlacingGoal = false;
@@ -533,7 +533,7 @@
 				nodePlacingStatus.isPlacingGoal = false;
 			}}>Relocate start node</button
 		>
-		<button
+		<button class="{nodePlacingStatus.isPlacingStart ? "activeButton" : ""}"
 			on:click={() => {
 				if (nodePlacingStatus.isPlacingStart) {
 					nodePlacingStatus.isPlacingStart = false;
@@ -556,6 +556,9 @@
 {/if}
 
 <style lang="scss">
+    .activeButton{
+        background-color: gray;
+    }
 	.socialIcon {
 		font-size: 20pt;
 		color: black;
